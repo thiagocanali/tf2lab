@@ -37,8 +37,32 @@ const duration = computed(() => {
 </script>
 
 <style scoped>
-.stats-grid { display:grid; grid-template-columns:repeat(2,1fr); gap: .75rem }
-.stat { background: rgba(255,255,255,0.03); padding:.75rem; border-radius:6px }
-.label { color:var(--muted,#ccc); font-size:12px }
-.value { font-weight:600; font-size:18px }
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-sm);
+}
+.stat {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 79, 60, 0.08);
+  border-radius: var(--radius);
+  padding: var(--space-md);
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+.stat:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 79, 60, 0.1);
+}
+.label {
+  color: var(--text-soft);
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.value {
+  margin-top: 0.5rem;
+  font-weight: 700;
+  font-size: 1.35rem;
+  color: var(--text);
+}
 </style>

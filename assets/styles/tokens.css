@@ -1,19 +1,24 @@
 :root {
   /* Colors */
-  --bg: #06070b;
-  --surface: #12151f;
-  --surface-2: #1f2635;
-  --surface-3: #2f374c;
-  --text: #f4f5f8;
-  --text-muted: #9aa0c1;
-  --border: #2a2f3f;
-  --border-strong: #3f4760;
+  --bg: #07080d;
+  --surface: #121420;
+  --surface-2: #191f2f;
+  --surface-3: #222938;
+  --surface-strong: #1b2030;
+  --text: #f5f7fb;
+  --text-soft: #a9b0cc;
+  --text-muted: #7f8abf;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.12);
+  --shadow: 0 24px 80px rgba(0, 0, 0, 0.32);
   --accent: #ff4f3c;
-  --accent-soft: #ff6f5a;
+  --accent-soft: #ff8a5c;
+  --tf2-red: #ff3b30;
+  --tf2-blu: #3a80ff;
+  --tf2-orange: #ff9b33;
   --success: #4bd37f;
   --warning: #f1b649;
   --danger: #f15454;
-  --shadow: 0 24px 80px rgba(0, 0, 0, 0.25);
 
   /* Spacing */
   --space-xxs: 0.25rem;
@@ -24,13 +29,23 @@
   --space-xl: 2rem;
   --space-2xl: 3rem;
 
+  /* Borders & Shadows */
+  --radius: 18px;
+  --border-radius: 18px;
+  --shadow-soft: 0 14px 36px rgba(0, 0, 0, 0.22);
+  --shadow-strong: 0 30px 100px rgba(0, 0, 0, 0.35);
+
   /* Typography */
   --font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-family-mono: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
   --font-size-base: 1rem;
-  --font-size-lg: 1.125rem;
-  --font-size-xl: 1.5rem;
-  --font-size-2xl: 2.5rem;
+  --font-size-sm: 0.9rem;
+  --font-size-md: 1rem;
+  --font-size-lg: 1.15rem;
+  --font-size-xl: 1.4rem;
+  --font-size-2xl: 2rem;
   --font-weight-normal: 400;
   --font-weight-medium: 500;
   --font-weight-bold: 700;
 }
+

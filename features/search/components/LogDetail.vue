@@ -30,11 +30,45 @@ const goBack = () => router.push('/search')
 </script>
 
 <style scoped>
-.log-detail { display:flex; flex-direction:column; gap:1rem }
-.layout { display:flex; gap:1rem }
-.main { flex:3 }
-.side { flex:1; display:flex; flex-direction:column; gap:1rem }
-.actions { display:flex; flex-direction:column; gap:.5rem }
-.external { color: var(--accent); text-decoration:underline }
-@media(max-width:800px){ .layout{ flex-direction:column } }
+.log-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+.layout {
+  display: grid;
+  grid-template-columns: 2.4fr 1fr;
+  gap: var(--space-lg);
+}
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+.actions {
+  background: rgba(24, 29, 45, 0.95);
+  border: 1px solid rgba(255, 79, 60, 0.12);
+  border-radius: var(--radius);
+  padding: var(--space-md);
+  display: grid;
+  gap: var(--space-sm);
+}
+.external {
+  color: var(--tf2-orange);
+  text-decoration: none;
+  font-weight: 700;
+}
+.external:hover {
+  color: var(--accent);
+}
+@media (max-width: 860px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
 </style>
