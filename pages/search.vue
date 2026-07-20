@@ -16,6 +16,11 @@
           <div v-if="r.url"><a :href="r.url" target="_blank">Abrir log</a></div>
         </li>
       </ul>
+      <div class="pagination">
+        <button @click="prevPage" :disabled="page <= 1">Anterior</button>
+        <span>Página {{ page }} / {{ totalPages() }}</span>
+        <button @click="nextPage" :disabled="page >= totalPages()">Próxima</button>
+      </div>
     </div>
 
     <div v-else-if="!loading">
@@ -31,20 +36,38 @@ import useLogsService from '~/features/analytics/services/logsService'
 const query = ref('')
 const results = ref<any[]>([])
 const loading = ref(false)
+const page = ref(1)
+const perPage = 10
+const total = ref(0)
 
 const service = useLogsService()
 
-const onSearch = async () => {
+const onSearch = async (newPage = page.value) => {
   loading.value = true
   try {
-    const res = await service.search(query.value)
-    // normalize common shapes: { results: [] } or { data: [] } or direct array
+    const res = await service.search(query.value, newPage, perPage)
     results.value = res?.results ?? res?.data ?? (Array.isArray(res) ? res : [])
+    page.value = res?.page ?? newPage
+    total.value = res?.total ?? results.value.length
   } catch (err) {
-    // simple error fallback
     results.value = [{ id: 'err', title: String(err) }]
+    total.value = 0
   } finally {
     loading.value = false
+  }
+}
+
+const totalPages = () => Math.max(1, Math.ceil(total.value / perPage))
+
+const nextPage = () => {
+  if (page.value < totalPages()) {
+    onSearch(page.value + 1)
+  }
+}
+
+const prevPage = () => {
+  if (page.value > 1) {
+    onSearch(page.value - 1)
   }
 }
 </script>
