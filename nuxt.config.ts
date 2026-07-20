@@ -1,20 +1,24 @@
-// https://nuxt.com/docs/api/configuration/nuxt-config
+import { resolve } from 'node:path'
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
+
   modules: [
     '@pinia/nuxt',
     '@primevue/nuxt-module'
   ],
+
   css: [
-    '~/assets/styles/tokens.css',
-    '~/assets/styles/base.css',
-    '~/assets/styles/utilities.css',
-    '~/assets/styles/animations.css'
+    resolve(__dirname, 'assets/styles/tokens.css'),
+    resolve(__dirname, 'assets/styles/base.css'),
+    resolve(__dirname, 'assets/styles/utilities.css'),
+    resolve(__dirname, 'assets/styles/animations.css')
   ],
+
   primevue: {
     importTheme: {
-      from: '@primeuix/themes/umd/nora.js',
+      from: '@primevue/themes/nora',
       as: 'theme'
     },
     options: {

@@ -2,19 +2,23 @@
   <div class="layout-shell">
     <header class="site-header">
       <div class="brand">
-        <span class="brand-logo">TF2</span>
-        <span class="brand-name">TF2Lab</span>
+        <NuxtLink to="/" class="brand-link">
+          <span class="brand-logo">TF2</span>
+          <div>
+            <span class="brand-name">TF2Lab</span>
+            <span class="brand-tag">logs.tf analytics</span>
+          </div>
+        </NuxtLink>
       </div>
-      <nav>
+
+      <nav class="main-nav">
+        <NuxtLink to="/" exact-active-class="active">Home</NuxtLink>
+        <NuxtLink to="/search" active-class="active">Search</NuxtLink>
         <a href="https://github.com/thiagocanali/tf2lab" target="_blank" rel="noopener noreferrer">GitHub</a>
       </nav>
     </header>
 
     <div class="layout-body">
-      <aside class="sidebar-placeholder">
-        <!-- Sidebar placeholder for future dashboard -->
-      </aside>
-
       <main class="content-area">
         <slot />
       </main>
@@ -35,64 +39,74 @@
   justify-content: space-between;
   padding: 1rem 2rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(10, 12, 18, 0.9);
-  backdrop-filter: blur(12px);
+  background: linear-gradient(180deg, rgba(12, 13, 19, 0.98), rgba(10, 12, 18, 0.96));
+  backdrop-filter: blur(16px);
 }
 
-.brand {
+.brand-link {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.85rem;
+  text-decoration: none;
+  color: inherit;
 }
 
 .brand-logo {
-  width: 2.4rem;
-  height: 2.4rem;
+  width: 2.6rem;
+  height: 2.6rem;
   display: grid;
   place-items: center;
-  border-radius: 0.75rem;
-  background: var(--accent);
+  border-radius: 1rem;
+  background: var(--tf2-red);
   color: #121212;
   font-weight: 700;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
 .brand-name {
+  display: block;
   font-weight: 700;
   letter-spacing: 0.08em;
 }
 
-.site-header a {
+.brand-tag {
+  display: block;
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+}
+
+.main-nav {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.main-nav a {
   color: var(--text);
   text-decoration: none;
-  font-weight: 500;
+  font-weight: 600;
+  padding: 0.65rem 0.75rem;
+  border-radius: 999px;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.main-nav a:hover,
+.main-nav a.active {
+  background: rgba(255, 79, 60, 0.16);
+  color: white;
 }
 
 .layout-body {
+  min-height: calc(100vh - 84px);
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   flex: 1;
-}
-
-.sidebar-placeholder {
-  display: none;
 }
 
 .content-area {
   width: min(100%, 1200px);
   margin: 0 auto;
   padding: 2rem;
-}
-
-@media (min-width: 1024px) {
-  .layout-body {
-    grid-template-columns: 240px minmax(0, 1fr);
-  }
-
-  .sidebar-placeholder {
-    display: block;
-    padding: 2rem 0;
-    color: rgba(255, 255, 255, 0.4);
-    font-size: 0.95rem;
-  }
 }
 </style>

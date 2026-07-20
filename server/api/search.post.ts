@@ -18,10 +18,10 @@ export default defineEventHandler(async (event) => {
   }
 
   const runtime = useRuntimeConfig()
-  const logsTfUrl = runtime?.public?.logsTfUrl
+  const logsTfUrl = runtime?.public?.logsTfUrl ?? 'https://logs.tf/api/v1/log'
 
-  // If no external logs.tf URL configured, return a mocked paginated response
-  if (!logsTfUrl) {
+  // If no query provided, return a mocked paginated response
+  if (!query) {
     const mockResults = Array.from({ length: Math.min(perPage, 3) }).map((_, i) => ({
       id: `mock-${(page - 1) * perPage + i + 1}`,
       title: `Log simulado para "${query}" (#${(page - 1) * perPage + i + 1})`,
@@ -45,14 +45,16 @@ export default defineEventHandler(async (event) => {
 
   try {
     // Proxy to external logsTfUrl. Adjust path/params when API contract is known.
-    const res = await $fetch(`${logsTfUrl}/search`, {
-      method: 'POST',
-      body: { query, page, perPage }
+    // logs.tf exposes a log endpoint at: https://logs.tf/api/v1/log?id=<id>
+    // We'll call the configured `logsTfUrl` with the `id` query parameter.
+    const res = await $fetch(`${logsTfUrl}?id=${encodeURIComponent(query)}`, {
+      method: 'GET'
     })
 
-    // Normalize response to { results, page, perPage, total }
-    const results = res?.results ?? res?.data ?? (Array.isArray(res) ? res : [])
-    const total = res?.total ?? res?.count ?? results.length
+    // Normalize response: the logs.tf `log` object may be nested.
+    const logData = res?.log ?? res
+    const results = logData ? [logData] : []
+    const total = results.length
 
     const payload = { results, page, perPage, total }
     cache.set(cacheKey, { ts: now, data: payload })

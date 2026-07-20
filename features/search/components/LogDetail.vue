@@ -8,7 +8,7 @@
       <aside class="side">
         <LogStatsGrid :data="data" />
         <Card class="actions">
-          <Button label="Voltar para Busca" @click="goBack" />
+          <BackButton fallback="/search" label="Voltar para Busca" />
           <a v-if="data.url" :href="data.url" target="_blank" class="external">Abrir no logs.tf</a>
         </Card>
       </aside>
@@ -21,6 +21,7 @@ import { useRouter } from 'vue-router'
 import LogHeader from './LogHeader.vue'
 import LogPlayersTable from './LogPlayersTable.vue'
 import LogStatsGrid from './LogStatsGrid.vue'
+import BackButton from '~/components/BackButton.vue'
 import type { LogData } from '~/features/analytics/types'
 
 const props = defineProps<{ data: LogData }>()

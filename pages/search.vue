@@ -13,7 +13,11 @@
           <strong>{{ r.title ?? r.id }}</strong>
           <div>{{ r.map ? 'Mapa: ' + r.map : '' }}</div>
           <div>{{ r.timestamp }}</div>
-          <div v-if="r.url"><a :href="r.url" target="_blank">Abrir log</a></div>
+          <div class="result-actions">
+            <NuxtLink :to="`/log/${r.id}`">Detalhes do log</NuxtLink>
+            <NuxtLink v-if="r.steamid" :to="`/player/${r.steamid}`">Perfil do jogador</NuxtLink>
+            <a v-if="r.url" :href="r.url" target="_blank">Abrir no logs.tf</a>
+          </div>
         </li>
       </ul>
       <div class="pagination">
@@ -75,7 +79,11 @@ const prevPage = () => {
 <style scoped>
 .page-search { padding: 1.25rem }
 .search-form { display:flex; gap: .5rem; margin-bottom: 1rem }
-.search-form input { flex:1; padding:.5rem }
+.search-form input { flex:1; padding:.75rem; border-radius: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); color: var(--text); }
+.search-form button { padding: .75rem 1.25rem; border-radius: 12px; border: none; background: var(--tf2-red); color: white; cursor: pointer; }
 .results ul { list-style: none; padding:0 }
-.results li { padding:.5rem 0; border-bottom: 1px solid rgba(0,0,0,.06) }
+.results li { padding: 1rem; border: 1px solid rgba(255,255,255,.07); border-radius: 16px; margin-bottom: 1rem; background: rgba(255,255,255,0.02); }
+.result-actions { display:flex; gap: 1rem; flex-wrap: wrap; margin-top: .75rem; }
+.result-actions a, .result-actions a.router-link { color: var(--accent); }
+.pagination { display:flex; justify-content:space-between; align-items:center; gap:1rem; margin-top:1rem }
 </style>

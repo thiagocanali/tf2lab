@@ -6,6 +6,8 @@ export interface PlayerStat {
   assists?: number
   damage?: number
   kd?: number
+  steamId?: string
+  steamid?: string
   [k: string]: any
 }
 

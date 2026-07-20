@@ -5,7 +5,18 @@
       <span class="player-count">{{ players.length }} jogadores</span>
     </div>
     <DataTable :value="players" :rowClassName="rowClass" responsiveLayout="scroll">
-      <Column field="name" header="Jogador" />
+      <Column header="Jogador">
+        <template #body="slotProps">
+          <NuxtLink
+            v-if="slotProps.data.steamid || slotProps.data.steamId"
+            :to="`/player/${slotProps.data.steamid ?? slotProps.data.steamId}`"
+            class="player-link"
+          >
+            {{ slotProps.data.name ?? '-' }}
+          </NuxtLink>
+          <span v-else>{{ slotProps.data.name ?? '-' }}</span>
+        </template>
+      </Column>
       <Column header="Kills">
         <template #body="slotProps">
           <span :class="['stat-pill', { 'highlight': slotProps.data.kills === bestKills }]">
@@ -79,5 +90,13 @@ const rowClass = (player: PlayerStat) => ({
 .stat-pill.highlight {
   background: rgba(255, 79, 60, 0.22);
   color: #fff;
+}
+.player-link {
+  color: var(--accent);
+  font-weight: 700;
+  text-decoration: none;
+}
+.player-link:hover {
+  text-decoration: underline;
 }
 </style>
