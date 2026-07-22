@@ -5,7 +5,6 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
 
   modules: [
-    '@pinia/nuxt',
     '@primevue/nuxt-module'
   ],
 
@@ -19,7 +18,7 @@ export default defineNuxtConfig({
   primevue: {
     importTheme: {
       from: '@primevue/themes/nora',
-      as: 'theme'
+      as: 'Nora'
     },
     options: {
       ripple: true,

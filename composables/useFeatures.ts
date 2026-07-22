@@ -1,5 +1,5 @@
 import { computed } from 'vue'
-import { featureConfig, type FeatureKey } from '~/shared/config/features'
+import { featureConfig, type FeatureKey } from '#shared/config/features'
 import { useRuntimeConfig } from '#imports'
 
 export const useFeatures = () => {

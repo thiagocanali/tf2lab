@@ -1,8 +1,7 @@
-import { getQuery } from 'h3'
+import { getRouterParam } from 'h3'
 
 export default defineEventHandler(async (event) => {
-  const params = getQuery(event) as Record<string, string>
-  const id = params.id ?? params['id'] ?? event.context.params?.id
+  const id = getRouterParam(event, 'id')
 
   if (!id) {
     return { error: 'Missing log id' }
