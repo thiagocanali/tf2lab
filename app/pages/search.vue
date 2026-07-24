@@ -4,9 +4,9 @@
 
     <header class="search-header">
       <p class="eyebrow"><span aria-hidden="true">⌕</span> TF2Lab search</p>
-      <h1>Find a log.</h1>
+      <h1>Find players & logs.</h1>
       <p class="search-description">
-        Search by SteamID, player name, or logs.tf log ID.
+        Search by SteamID64, player name, or logs.tf log ID.
       </p>
     </header>
 
@@ -27,16 +27,17 @@
 
     <!-- Loading skeletons -->
     <div v-if="loading" class="results-grid" aria-busy="true" aria-live="polite">
-      <div v-for="n in 3" :key="n" class="result-card result-card--skeleton">
-        <div class="skeleton-line skeleton-line--lg" />
-        <div class="skeleton-line" />
-        <div class="skeleton-line skeleton-line--sm" />
+      <div v-for="n in 4" :key="n" class="result-card result-card--skeleton result-card--player-skeleton">
+        <div class="skeleton-line skeleton-line--avatar" />
+        <div class="skeleton-line skeleton-line--name" />
+        <div class="skeleton-line skeleton-line--meta" />
+        <div class="skeleton-line skeleton-line--meta" />
       </div>
     </div>
 
     <!-- Results: Players first (priority), then logs -->
     <section v-else-if="hasResults" class="results-grid" aria-live="polite">
-      <!-- Player Results (priority) -->
+<!-- Player Results (priority) -->
       <article v-for="p in players" :key="p.id" class="result-card result-card--player">
         <div class="result-card__head">
           <div class="player-info">
@@ -51,9 +52,23 @@
           </div>
           <span v-if="queryType === 'steamid'" class="badge badge--success">Exact match</span>
         </div>
-        <div class="result-card__meta">
-          <span v-if="p.overview.matches">Matches: <strong>{{ p.overview.matches }}</strong></span>
-          <span v-if="p.overview.kdRatio">• K/D: <strong>{{ p.overview.kdRatio.toFixed(2) }}</strong></span>
+        <div class="result-card__meta player-stats">
+          <div class="stat" v-if="p.overview.matches">
+            <span>Matches</span>
+            <strong>{{ p.overview.matches }}</strong>
+          </div>
+          <div class="stat" v-if="p.overview.kdRatio !== undefined">
+            <span>K/D</span>
+            <strong>{{ p.overview.kdRatio.toFixed(2) }}</strong>
+          </div>
+          <div class="stat" v-if="p.overview.totalKills">
+            <span>Kills</span>
+            <strong>{{ p.overview.totalKills }}</strong>
+          </div>
+          <div class="stat" v-if="p.overview.totalDamage">
+            <span>Damage</span>
+            <strong>{{ p.overview.totalDamage.toLocaleString() }}</strong>
+          </div>
         </div>
         <div class="result-card__actions">
           <NuxtLink class="action-link action-link--primary" :to="`/player/${p.steamId ?? p.id}`">
@@ -112,12 +127,12 @@
       <p v-else>
         Try a different SteamID, player name, or log ID.
       </p>
-      <div class="empty-state__suggestions" v-if="queryType !== 'empty'">
-        <p class="suggestions-label">Suggestions:</p>
+      <div class="empty-state__suggestions">
+        <p class="suggestions-label">Try searching for:</p>
         <ul>
           <li>SteamID64: <code>76561198000000001</code></li>
           <li>Player name: <code>saxton</code></li>
-          <li>Log ID: <code>1234567</code></li>
+          <li>Log ID: <code>3690111</code></li>
         </ul>
       </div>
     </section>
@@ -126,13 +141,13 @@
     <section v-else class="empty-state">
       <p class="empty-state__icon" aria-hidden="true">⌕</p>
       <h2>Search the TF2Lab log archive</h2>
-      <p>Enter a SteamID, player name, or logs.tf log ID above to start.</p>
+      <p>Enter a SteamID64, player name, or logs.tf log ID above to start.</p>
       <div class="empty-state__suggestions">
-        <p class="suggestions-label">Try searching for:</p>
+        <p class="suggestions-label">Examples:</p>
         <ul>
           <li>SteamID64: <code>76561198000000001</code></li>
           <li>Player name: <code>saxton</code></li>
-          <li>Log ID: <code>1234567</code></li>
+          <li>Log ID: <code>3690111</code></li>
         </ul>
       </div>
     </section>
@@ -190,6 +205,12 @@ function formatDate(timestamp: string): string {
 function getInitials(name: string): string {
   const parts = name.split(' ')
   return parts.map((part) => part[0]).slice(0, 2).join('').toUpperCase()
+}
+
+function formatNumber(num: number): string {
+  if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M'
+  if (num >= 1000) return (num / 1000).toFixed(1) + 'K'
+  return String(num)
 }
 
 async function runSearch(term: string, targetPage: number = DEFAULT_PAGE) {
@@ -378,6 +399,24 @@ onMounted(() => {
 .player-info h2 { margin: 0; font-size: var(--font-size-lg); color: var(--text); }
 .player-info .result-card__id { font-size: 0.75rem; }
 
+.player-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  color: var(--text-soft);
+  font-size: 0.85rem;
+}
+.player-stats .stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.player-stats .stat strong {
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
 .result-card__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); flex-wrap: wrap; }
 .result-card__head h2 { margin: 0; font-size: var(--font-size-xl); color: var(--text); }
 .result-card__id { color: var(--text-muted); font-family: var(--font-family-mono); font-size: 0.85rem; }
@@ -403,6 +442,9 @@ onMounted(() => {
 .action-link--primary:hover { background: #ff765d; color: #160807; }
 
 .result-card--skeleton { gap: 0.85rem; }
+.result-card--player-skeleton {
+  padding: var(--space-lg);
+}
 .skeleton-line {
   height: 0.75rem;
   border-radius: 0.5rem;
@@ -412,6 +454,9 @@ onMounted(() => {
 }
 .skeleton-line--lg { height: 1.2rem; width: 60%; }
 .skeleton-line--sm { width: 35%; }
+.skeleton-line--avatar { height: 48px; width: 48px; border-radius: 12px; }
+.skeleton-line--name { height: 1.3rem; width: 45%; }
+.skeleton-line--meta { height: 0.85rem; width: 30%; }
 @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
 .empty-state {
@@ -428,6 +473,46 @@ onMounted(() => {
 .empty-state__icon { margin: 0; font-size: 2.5rem; color: var(--accent-soft); }
 .empty-state h2 { margin: 0; font-size: var(--font-size-xl); color: var(--text); }
 .empty-state p { margin: 0; color: var(--text-soft); }
+
+.empty-state__suggestions {
+  margin-top: var(--space-md);
+  width: 100%;
+  max-width: 400px;
+  text-align: left;
+}
+.empty-state__suggestions .suggestions-label {
+  margin: 0 0 var(--space-sm);
+  color: var(--text-soft);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.empty-state__suggestions ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+.empty-state__suggestions li {
+  padding: 0.6rem 0.9rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: var(--text);
+  transition: background 0.2s, border-color 0.2s;
+}
+.empty-state__suggestions li:hover {
+  background: rgba(255, 79, 60, 0.08);
+  border-color: rgba(255, 79, 60, 0.2);
+}
+.empty-state__suggestions code {
+  font-family: var(--font-family-mono);
+  color: var(--accent);
+  background: rgba(255, 79, 60, 0.1);
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+}
 
 .pagination {
   display: flex;
