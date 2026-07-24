@@ -13,9 +13,11 @@ export default defineEventHandler(async (event) => {
   // Try the upstream logs.tf API first.
   try {
     const res = await $fetch(`${logsTfUrl}?id=${encodeURIComponent(String(id))}`)
-    const logData = res?.log ?? res
-    if (logData) {
-      return { data: { id: String(id), ...logData } }
+    // API returns { logs: [...], total: N, ... }
+    const logs = res?.logs ?? []
+    const matchingLog = logs.find((log: any) => String(log.id) === String(id))
+    if (matchingLog) {
+      return { data: { id: String(id), ...matchingLog } }
     }
   } catch {
     // Fall through to mock below.
