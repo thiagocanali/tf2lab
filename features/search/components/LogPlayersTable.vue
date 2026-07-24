@@ -33,7 +33,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { PlayerStat } from '~/features/analytics/types'
+import type { PlayerStat } from '~~/features/analytics/types'
 const props = defineProps<{ players: PlayerStat[] }>()
 
 const bestKills = computed(() => {

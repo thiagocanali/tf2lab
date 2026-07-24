@@ -19,7 +19,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { LogData } from '~/features/analytics/types'
+import type { LogData } from '~~/features/analytics/types'
 const props = defineProps<{ data: LogData }>()
 
 const formattedDate = computed(() => props.data.timestamp ? new Date(props.data.timestamp).toLocaleString() : '')

@@ -8,7 +8,7 @@
 </template>
 
 <script setup lang="ts">
-import type { PlayerOverviewStats } from '~/features/player/types'
+import type { PlayerOverviewStats } from '~~/features/player/types'
 const props = defineProps<{ overview: PlayerOverviewStats }>()
 
 const stats = [

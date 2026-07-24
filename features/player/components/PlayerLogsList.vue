@@ -17,7 +17,7 @@
 </template>
 
 <script setup lang="ts">
-import type { PlayerLogReference } from '~/features/player/types'
+import type { PlayerLogReference } from '~~/features/player/types'
 const props = defineProps<{ logs: PlayerLogReference[] }>()
 </script>
 

@@ -23,7 +23,7 @@
 </template>
 
 <script setup lang="ts">
-import type { LogData } from '~/features/analytics/types'
+import type { LogData } from '~~/features/analytics/types'
 import { computed } from 'vue'
 const props = defineProps<{ data: LogData }>()
 

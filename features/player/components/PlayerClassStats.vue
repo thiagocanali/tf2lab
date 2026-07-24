@@ -19,7 +19,7 @@
 </template>
 
 <script setup lang="ts">
-import type { PlayerClassStat } from '~/features/player/types'
+import type { PlayerClassStat } from '~~/features/player/types'
 const props = defineProps<{ classes: PlayerClassStat[] }>()
 </script>
 

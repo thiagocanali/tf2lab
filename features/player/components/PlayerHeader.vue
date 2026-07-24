@@ -22,7 +22,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { PlayerProfile } from '~/features/player/types'
+import type { PlayerProfile } from '~~/features/player/types'
 const props = defineProps<{ player: PlayerProfile }>()
 
 const initials = computed(() => {
