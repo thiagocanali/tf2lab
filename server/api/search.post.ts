@@ -66,16 +66,18 @@ export default defineEventHandler(async (event) => {
 
     if (queryType === 'logid') {
       // Search for specific log by ID
+      // logs.tf returns an array of logs when querying by ?id=
       const res = await $fetch(`${logsTfUrl}?id=${encodeURIComponent(query)}`, { method: 'GET' })
-      const logData = res?.log ?? res
-      if (logData) {
-        primaryResult = { id: String(query), ...logData }
-        results = [primaryResult]
+      const logs = Array.isArray(res) ? res : (res?.logs ?? res?.results ?? [])
+      if (logs.length > 0) {
+        primaryResult = logs[0]
+        results = logs
         total = 1
       }
     } else if (queryType === 'steamid') {
-      // Search logs by player SteamID using the player filter
+      // Search logs by player SteamID
       const res = await $fetch(`${logsTfUrl}?player=${encodeURIComponent(query)}&limit=${perPage}&offset=${(page - 1) * perPage}`, { method: 'GET' })
+      // API returns { logs: [...], total: N }
       const logs = res?.logs ?? res?.results ?? []
       results = logs.map((log: any) => ({ id: String(log.id), ...log }))
       total = res?.total ?? results.length
@@ -124,16 +126,14 @@ export default defineEventHandler(async (event) => {
               id: String(log.id),
               title: log.title ?? `Log ${log.id}`,
               map: log.map,
-              timestamp: log.timestamp,
+              timestamp: log.date ? new Date(log.date * 1000).toISOString() : log.timestamp,
               result: log.red_score > log.blu_score ? 'Victory' : 'Defeat'
             }))
           }]
         }
       }
     } else if (queryType === 'playername') {
-      // For player name search, we can try searching by title/map
-      // but logs.tf doesn't have direct player name search
-      // We'll search logs and then extract unique players from results
+      // For player name search, search logs by title and extract players
       const res = await $fetch(`${logsTfUrl}?title=${encodeURIComponent(query)}&limit=${perPage}&offset=${(page - 1) * perPage}`, { method: 'GET' })
       const logs = res?.logs ?? res?.results ?? []
       results = logs.map((log: any) => ({ id: String(log.id), ...log }))
@@ -163,7 +163,7 @@ export default defineEventHandler(async (event) => {
                 id: String(log.id),
                 title: log.title ?? `Log ${log.id}`,
                 map: log.map,
-                timestamp: log.timestamp,
+                timestamp: log.date ? new Date(log.date * 1000).toISOString() : log.timestamp,
                 result: log.red_score > log.blu_score ? 'Victory' : 'Defeat'
               }]
             })
