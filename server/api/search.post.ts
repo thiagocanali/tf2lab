@@ -133,44 +133,16 @@ export default defineEventHandler(async (event) => {
         }
       }
     } else if (queryType === 'playername') {
-      // For player name search, search logs by title and extract players
+      // For player name search, search logs by title
+      // Note: logs from title search don't include players, only full log detail does
       const res = await $fetch(`${logsTfUrl}?title=${encodeURIComponent(query)}&limit=${perPage}&offset=${(page - 1) * perPage}`, { method: 'GET' })
       const logs = res?.logs ?? res?.results ?? []
       results = logs.map((log: any) => ({ id: String(log.id), ...log }))
       total = res?.total ?? results.length
       
-      // Extract unique players from search results
-      const seenPlayers = new Map<string, any>()
-      logs.forEach((log: any) => {
-        log.players?.forEach((p: any) => {
-          const key = p.steamid ?? p.steamId ?? p.name
-          if (key && !seenPlayers.has(key)) {
-            seenPlayers.set(key, {
-              id: key,
-              name: p.name,
-              steamId: p.steamid ?? p.steamId,
-              avatarUrl: '',
-              overview: {
-                totalKills: p.kills ?? 0,
-                totalDeaths: p.deaths ?? 0,
-                kdRatio: p.deaths ? (p.kills ?? 0) / p.deaths : (p.kills ?? 0),
-                totalDamage: p.damage ?? 0,
-                matches: 1,
-                timePlayed: 0
-              },
-              classStats: [],
-              recentLogs: [{
-                id: String(log.id),
-                title: log.title ?? `Log ${log.id}`,
-                map: log.map,
-                timestamp: log.date ? new Date(log.date * 1000).toISOString() : log.timestamp,
-                result: log.red_score > log.blu_score ? 'Victory' : 'Defeat'
-              }]
-            })
-          }
-        })
-      })
-      players = Array.from(seenPlayers.values()).slice(0, 10)
+      // For name search, we can't easily get player details without extra API calls
+      // Just return logs for now - user can click into a log to see players
+      players = []
     }
 
     const payload = {
