@@ -66,13 +66,18 @@ export default defineEventHandler(async (event) => {
 
     if (queryType === 'logid') {
       // Search for specific log by ID
-      // logs.tf returns an array of logs when querying by ?id=
-      const res = await $fetch(`${logsTfUrl}?id=${encodeURIComponent(query)}`, { method: 'GET' })
-      const logs = Array.isArray(res) ? res : (res?.logs ?? res?.results ?? [])
-      if (logs.length > 0) {
-        primaryResult = logs[0]
-        results = logs
+      // logs.tf API doesn't have exact ID filter, so we fetch recent logs and find matching one
+      const res = await $fetch(`${logsTfUrl}?id=${encodeURIComponent(query)}&limit=50`, { method: 'GET' })
+      const logs = res?.logs ?? res?.results ?? []
+      const matchingLog = logs.find((log: any) => String(log.id) === query)
+      if (matchingLog) {
+        primaryResult = matchingLog
+        results = [matchingLog]
         total = 1
+      } else {
+        // Fallback: return the first few logs as results
+        results = logs.slice(0, perPage).map((log: any) => ({ id: String(log.id), ...log }))
+        total = logs.length
       }
     } else if (queryType === 'steamid') {
       // Search logs by player SteamID
