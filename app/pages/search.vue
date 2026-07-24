@@ -34,8 +34,35 @@
       </div>
     </div>
 
-    <!-- Results -->
-    <section v-else-if="results.length" class="results-grid" aria-live="polite">
+    <!-- Results: Players first (priority), then logs -->
+    <section v-else-if="hasResults" class="results-grid" aria-live="polite">
+      <!-- Player Results (priority) -->
+      <article v-for="p in players" :key="p.id" class="result-card result-card--player">
+        <div class="result-card__head">
+          <div class="player-info">
+            <div class="avatar-wrapper">
+              <img v-if="p.avatarUrl" :src="p.avatarUrl" alt="" />
+              <div v-else class="avatar-fallback">{{ getInitials(p.name) }}</div>
+            </div>
+            <div>
+              <h2>{{ p.name }}</h2>
+              <span class="result-card__id">SteamID: {{ p.steamId }}</span>
+            </div>
+          </div>
+          <span v-if="queryType === 'steamid'" class="badge badge--success">Exact match</span>
+        </div>
+        <div class="result-card__meta">
+          <span v-if="p.overview.matches">Matches: <strong>{{ p.overview.matches }}</strong></span>
+          <span v-if="p.overview.kdRatio">• K/D: <strong>{{ p.overview.kdRatio.toFixed(2) }}</strong></span>
+        </div>
+        <div class="result-card__actions">
+          <NuxtLink class="action-link action-link--primary" :to="`/player/${p.steamId ?? p.id}`">
+            View player profile
+          </NuxtLink>
+        </div>
+      </article>
+
+      <!-- Log Results -->
       <article v-for="r in results" :key="r.id" class="result-card">
         <div class="result-card__head">
           <h2>{{ r.title ?? ('Log ' + r.id) }}</h2>
@@ -50,9 +77,9 @@
             View log
           </NuxtLink>
           <NuxtLink
-            v-if="r.steamid"
+            v-if="r.players?.[0]?.steamid || r.players?.[0]?.steamId"
             class="action-link"
-            :to="`/player/${r.steamid}`"
+            :to="`/player/${r.players[0].steamid ?? r.players[0].steamId}`"
           >
             Player profile
           </NuxtLink>
@@ -73,7 +100,26 @@
     <section v-else-if="hasSearched" class="empty-state">
       <p class="empty-state__icon" aria-hidden="true">∅</p>
       <h2>No results for "{{ lastQuery }}"</h2>
-      <p>Try a different SteamID, player name, or log ID.</p>
+      <p v-if="queryType === 'steamid64'">
+        This SteamID64 wasn't found in logs.tf. Make sure it's a valid 17-digit SteamID64 (starts with 7656119).
+      </p>
+      <p v-else-if="queryType === 'logid'">
+        Log ID <code>{{ lastQuery }}</code> not found on logs.tf.
+      </p>
+      <p v-else-if="queryType === 'playername'">
+        No logs found for player "<strong>{{ lastQuery }}</strong>". Try their SteamID64 for better results.
+      </p>
+      <p v-else>
+        Try a different SteamID, player name, or log ID.
+      </p>
+      <div class="empty-state__suggestions" v-if="queryType !== 'empty'">
+        <p class="suggestions-label">Suggestions:</p>
+        <ul>
+          <li>SteamID64: <code>76561198000000001</code></li>
+          <li>Player name: <code>saxton</code></li>
+          <li>Log ID: <code>1234567</code></li>
+        </ul>
+      </div>
     </section>
 
     <!-- Initial state: never searched -->
@@ -81,6 +127,14 @@
       <p class="empty-state__icon" aria-hidden="true">⌕</p>
       <h2>Search the TF2Lab log archive</h2>
       <p>Enter a SteamID, player name, or logs.tf log ID above to start.</p>
+      <div class="empty-state__suggestions">
+        <p class="suggestions-label">Try searching for:</p>
+        <ul>
+          <li>SteamID64: <code>76561198000000001</code></li>
+          <li>Player name: <code>saxton</code></li>
+          <li>Log ID: <code>1234567</code></li>
+        </ul>
+      </div>
     </section>
 
     <!-- Pagination -->
@@ -95,7 +149,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import useLogsService from '~~/features/analytics/services/logsService'
-import type { LogData } from '~~/features/analytics/types'
+import type { PlayerLogReference } from '~~/features/player/types'
 
 // `useRoute` and `useRouter` are auto-imported by Nuxt.
 
@@ -107,14 +161,18 @@ const router = useRouter()
 const service = useLogsService()
 
 const query = ref<string>(typeof route.query.q === 'string' ? route.query.q : '')
-const results = ref<LogData[]>([])
+const results = ref<any[]>([])
+const players = ref<any[]>([])
 const loading = ref<boolean>(false)
 const page = ref<number>(readPageFromRoute())
 const total = ref<number>(0)
 const hasSearched = ref<boolean>(false)
 const lastQuery = ref<string>('')
+const queryType = ref<string>('')
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / PER_PAGE)))
+
+const hasResults = computed(() => results.value.length > 0 || players.value.length > 0)
 
 function readPageFromRoute(): number {
   const raw = Number(route.query.page ?? DEFAULT_PAGE)
@@ -129,6 +187,11 @@ function formatDate(timestamp: string): string {
   }
 }
 
+function getInitials(name: string): string {
+  const parts = name.split(' ')
+  return parts.map((part) => part[0]).slice(0, 2).join('').toUpperCase()
+}
+
 async function runSearch(term: string, targetPage: number = DEFAULT_PAGE) {
   const trimmed = term.trim()
   if (!trimmed) return
@@ -139,11 +202,14 @@ async function runSearch(term: string, targetPage: number = DEFAULT_PAGE) {
 
   try {
     const res = await service.search(trimmed, targetPage, PER_PAGE)
-    results.value = (res?.results ?? res?.data ?? []) as LogData[]
+    results.value = (res?.results ?? res?.data ?? []) as any[]
+    players.value = (res?.players ?? []) as any[]
+    queryType.value = res?.queryType ?? ''
     page.value = res?.page ?? targetPage
     total.value = res?.total ?? results.value.length
   } catch (err) {
     results.value = []
+    players.value = []
     total.value = 0
   } finally {
     loading.value = false
@@ -350,6 +416,22 @@ onMounted(() => {
 .pagination button:hover:not(:disabled) { background: rgba(255, 79, 60, 0.16); border-color: rgba(255, 79, 60, 0.32); }
 .pagination button:disabled { cursor: not-allowed; opacity: 0.4; }
 .pagination__label { color: var(--text-soft); font-size: 0.9rem; }
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.badge--success {
+  background: rgba(0, 200, 81, 0.16);
+  color: #6ef59e;
+  border: 1px solid rgba(0, 200, 81, 0.3);
+}
 
 .sr-only {
   position: absolute;

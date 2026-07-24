@@ -4,6 +4,28 @@ import { readBody } from 'h3'
 const cache = new Map()
 const CACHE_TTL = 60 * 1000 // 60s
 
+// Detect query type
+function detectQueryType(query: string): 'steamid64' | 'logid' | 'playername' | 'unknown' {
+  const trimmed = query.trim()
+  
+  // SteamID64: 17 digits starting with 7656119
+  if (/^7656119\d{10}$/.test(trimmed)) {
+    return 'steamid64'
+  }
+  
+  // Log ID: numeric (logs.tf log IDs are numeric)
+  if (/^\d+$/.test(trimmed)) {
+    return 'logid'
+  }
+  
+  // Player name: anything else with reasonable length
+  if (trimmed.length >= 2) {
+    return 'playername'
+  }
+  
+  return 'unknown'
+}
+
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const query = String(body?.query ?? '')
@@ -20,46 +42,101 @@ export default defineEventHandler(async (event) => {
   const runtime = useRuntimeConfig()
   const logsTfUrl = runtime?.public?.logsTfUrl ?? 'https://logs.tf/api/v1/log'
 
-  // If no query provided, return a mocked paginated response
-  if (!query) {
-    const mockResults = Array.from({ length: Math.min(perPage, 3) }).map((_, i) => ({
-      id: `mock-${(page - 1) * perPage + i + 1}`,
-      title: `Log simulado para "${query}" (#${(page - 1) * perPage + i + 1})`,
-      map: 'cp_process_final',
-      timestamp: new Date().toISOString(),
-      url: null
-    }))
-
+  // If no query provided, return empty with suggestion
+  if (!query.trim()) {
     const payload = {
-      mock: true,
-      query,
-      results: mockResults,
+      queryType: 'empty',
+      query: '',
+      results: [],
+      players: [],
       page,
       perPage,
-      total: 3
+      total: 0
     }
-
     cache.set(cacheKey, { ts: now, data: payload })
     return payload
   }
 
+  const queryType = detectQueryType(query)
+  
   try {
-    // Proxy to external logsTfUrl. Adjust path/params when API contract is known.
-    // logs.tf exposes a log endpoint at: https://logs.tf/api/v1/log?id=<id>
-    // We'll call the configured `logsTfUrl` with the `id` query parameter.
-    const res = await $fetch(`${logsTfUrl}?id=${encodeURIComponent(query)}`, {
-      method: 'GET'
-    })
+    let results: any[] = []
+    let players: any[] = []
+    let total = 0
+    let primaryResult: any = null
 
-    // Normalize response: the logs.tf `log` object may be nested.
-    const logData = res?.log ?? res
-    const results = logData ? [logData] : []
-    const total = results.length
+    if (queryType === 'logid') {
+      // Search for specific log by ID
+      const res = await $fetch(`${logsTfUrl}?id=${encodeURIComponent(query)}`, { method: 'GET' })
+      const logData = res?.log ?? res
+      if (logData) {
+        primaryResult = { id: String(query), ...logData }
+        results = [primaryResult]
+        total = 1
+      }
+    } else if (queryType === 'steamid64') {
+      // Search logs by player SteamID
+      const res = await $fetch(`${logsTfUrl}?player=${encodeURIComponent(query)}&limit=${perPage}&offset=${(page - 1) * perPage}`, { method: 'GET' })
+      const logs = res?.logs ?? res?.results ?? []
+      results = logs.map((log: any) => ({ id: String(log.id), ...log }))
+      total = res?.total ?? results.length
+      
+      // Build a mock player profile from the first log's player data
+      if (logs.length > 0) {
+        const firstLog = logs[0]
+        const playerInLog = firstLog.players?.find((p: any) => 
+          p.steamid === query || p.steamId === query || p.steamID === query
+        ) || firstLog.players?.[0]
+        
+        if (playerInLog) {
+          players = [{
+            id: query,
+            name: playerInLog.name ?? `Player ${query.slice(-5)}`,
+            steamId: query,
+            avatarUrl: '',
+            overview: {
+              totalKills: 0,
+              totalDeaths: 0,
+              kdRatio: 0,
+              totalDamage: 0,
+              matches: logs.length,
+              timePlayed: 0
+            },
+            classStats: [],
+            recentLogs: logs.slice(0, 5).map((log: any) => ({
+              id: String(log.id),
+              title: log.title ?? `Log ${log.id}`,
+              map: log.map,
+              timestamp: log.timestamp,
+              result: log.red_score > log.blu_score ? 'Victory' : 'Defeat'
+            }))
+          }]
+        }
+      }
+    } else if (queryType === 'playername') {
+      // Search logs that might contain this player name
+      // logs.tf doesn't have a direct player name search, so we search by log title/map
+      // This is a fallback - in production you'd want a proper search index
+      const res = await $fetch(`${logsTfUrl}?title=${encodeURIComponent(query)}&limit=${perPage}&offset=${(page - 1) * perPage}`, { method: 'GET' })
+      const logs = res?.logs ?? res?.results ?? []
+      results = logs.map((log: any) => ({ id: String(log.id), ...log }))
+      total = res?.total ?? results.length
+    }
 
-    const payload = { results, page, perPage, total }
+    const payload = {
+      queryType,
+      query,
+      results,
+      players,
+      primaryResult,
+      page,
+      perPage,
+      total
+    }
+    
     cache.set(cacheKey, { ts: now, data: payload })
     return payload
   } catch (err) {
-    return { error: String(err) }
+    return { error: String(err), queryType, query, results: [], players: [], page, perPage, total: 0 }
   }
 })
