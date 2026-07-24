@@ -74,13 +74,13 @@ export default defineEventHandler(async (event) => {
         total = 1
       }
     } else if (queryType === 'steamid') {
-      // Search logs by player SteamID
+      // Search logs by player SteamID using the player filter
       const res = await $fetch(`${logsTfUrl}?player=${encodeURIComponent(query)}&limit=${perPage}&offset=${(page - 1) * perPage}`, { method: 'GET' })
       const logs = res?.logs ?? res?.results ?? []
       results = logs.map((log: any) => ({ id: String(log.id), ...log }))
       total = res?.total ?? results.length
       
-      // Build a mock player profile from the first log's player data
+      // Build a player profile from the first log's player data
       if (logs.length > 0) {
         const firstLog = logs[0]
         const playerInLog = firstLog.players?.find((p: any) => 
@@ -88,16 +88,34 @@ export default defineEventHandler(async (event) => {
         ) || firstLog.players?.[0]
         
         if (playerInLog) {
+          // Aggregate stats from all logs for this player
+          let totalKills = 0
+          let totalDeaths = 0
+          let totalAssists = 0
+          let totalDamage = 0
+          
+          logs.forEach((log: any) => {
+            const pl = log.players?.find((p: any) => 
+              p.steamid === query || p.steamId === query || p.steamID === query
+            )
+            if (pl) {
+              totalKills += pl.kills ?? 0
+              totalDeaths += pl.deaths ?? 0
+              totalAssists += pl.assists ?? 0
+              totalDamage += pl.damage ?? 0
+            }
+          })
+          
           players = [{
             id: query,
             name: playerInLog.name ?? `Player ${query.slice(-5)}`,
             steamId: query,
             avatarUrl: '',
             overview: {
-              totalKills: 0,
-              totalDeaths: 0,
-              kdRatio: 0,
-              totalDamage: 0,
+              totalKills,
+              totalDeaths,
+              kdRatio: totalDeaths > 0 ? totalKills / totalDeaths : totalKills,
+              totalDamage,
               matches: logs.length,
               timePlayed: 0
             },
@@ -113,13 +131,46 @@ export default defineEventHandler(async (event) => {
         }
       }
     } else if (queryType === 'playername') {
-      // Search logs that might contain this player name
-      // logs.tf doesn't have a direct player name search, so we search by log title/map
-      // This is a fallback - in production you'd want a proper search index
+      // For player name search, we can try searching by title/map
+      // but logs.tf doesn't have direct player name search
+      // We'll search logs and then extract unique players from results
       const res = await $fetch(`${logsTfUrl}?title=${encodeURIComponent(query)}&limit=${perPage}&offset=${(page - 1) * perPage}`, { method: 'GET' })
       const logs = res?.logs ?? res?.results ?? []
       results = logs.map((log: any) => ({ id: String(log.id), ...log }))
       total = res?.total ?? results.length
+      
+      // Extract unique players from search results
+      const seenPlayers = new Map<string, any>()
+      logs.forEach((log: any) => {
+        log.players?.forEach((p: any) => {
+          const key = p.steamid ?? p.steamId ?? p.name
+          if (key && !seenPlayers.has(key)) {
+            seenPlayers.set(key, {
+              id: key,
+              name: p.name,
+              steamId: p.steamid ?? p.steamId,
+              avatarUrl: '',
+              overview: {
+                totalKills: p.kills ?? 0,
+                totalDeaths: p.deaths ?? 0,
+                kdRatio: p.deaths ? (p.kills ?? 0) / p.deaths : (p.kills ?? 0),
+                totalDamage: p.damage ?? 0,
+                matches: 1,
+                timePlayed: 0
+              },
+              classStats: [],
+              recentLogs: [{
+                id: String(log.id),
+                title: log.title ?? `Log ${log.id}`,
+                map: log.map,
+                timestamp: log.timestamp,
+                result: log.red_score > log.blu_score ? 'Victory' : 'Defeat'
+              }]
+            })
+          }
+        })
+      })
+      players = Array.from(seenPlayers.values()).slice(0, 10)
     }
 
     const payload = {
