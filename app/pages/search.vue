@@ -100,7 +100,7 @@
     <section v-else-if="hasSearched" class="empty-state">
       <p class="empty-state__icon" aria-hidden="true">∅</p>
       <h2>No results for "{{ lastQuery }}"</h2>
-      <p v-if="queryType === 'steamid64'">
+      <p v-if="queryType === 'steamid'">
         This SteamID64 wasn't found in logs.tf. Make sure it's a valid 17-digit SteamID64 (starts with 7656119).
       </p>
       <p v-else-if="queryType === 'logid'">

@@ -4,13 +4,12 @@ import { readBody } from 'h3'
 const cache = new Map()
 const CACHE_TTL = 60 * 1000 // 60s
 
-// Detect query type
-function detectQueryType(query: string): 'steamid64' | 'logid' | 'playername' | 'unknown' {
+function detectQueryType(query: string): 'steamid' | 'logid' | 'playername' | 'unknown' {
   const trimmed = query.trim()
   
   // SteamID64: 17 digits starting with 7656119
   if (/^7656119\d{10}$/.test(trimmed)) {
-    return 'steamid64'
+    return 'steamid'
   }
   
   // Log ID: numeric (logs.tf log IDs are numeric)
@@ -74,7 +73,7 @@ export default defineEventHandler(async (event) => {
         results = [primaryResult]
         total = 1
       }
-    } else if (queryType === 'steamid64') {
+    } else if (queryType === 'steamid') {
       // Search logs by player SteamID
       const res = await $fetch(`${logsTfUrl}?player=${encodeURIComponent(query)}&limit=${perPage}&offset=${(page - 1) * perPage}`, { method: 'GET' })
       const logs = res?.logs ?? res?.results ?? []
