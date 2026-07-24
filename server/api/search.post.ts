@@ -133,16 +133,60 @@ export default defineEventHandler(async (event) => {
         }
       }
     } else if (queryType === 'playername') {
-      // For player name search, search logs by title
-      // Note: logs from title search don't include players, only full log detail does
-      const res = await $fetch(`${logsTfUrl}?title=${encodeURIComponent(query)}&limit=${perPage}&offset=${(page - 1) * perPage}`, { method: 'GET' })
-      const logs = res?.logs ?? res?.results ?? []
-      results = logs.map((log: any) => ({ id: String(log.id), ...log }))
-      total = res?.total ?? results.length
-      
-      // For name search, we can't easily get player details without extra API calls
-      // Just return logs for now - user can click into a log to see players
-      players = []
+      // For player name search, fetch recent logs and extract players from them
+      // First, search logs by title to get log IDs
+      const searchRes = await $fetch(`${logsTfUrl}?title=${encodeURIComponent(query)}&limit=${Math.min(perPage, 5)}`, { method: 'GET' })
+      const searchLogs = searchRes?.logs ?? searchRes?.results ?? []
+      results = searchLogs.map((log: any) => ({ id: String(log.id), ...log }))
+      total = searchRes?.total ?? results.length
+
+      // For each log found, fetch full details to extract players
+      // We'll fetch up to 3 logs to get player data
+      const logsToFetch = searchLogs.slice(0, 3)
+      const seenPlayers = new Map<string, any>()
+
+      for (const log of logsToFetch) {
+        try {
+          const detailRes = await $fetch(`${logsTfUrl}?id=${encodeURIComponent(log.id)}`, { method: 'GET' })
+          const fullLog = Array.isArray(detailRes) ? detailRes[0] : (detailRes?.log ?? detailRes)
+          if (fullLog?.players) {
+            fullLog.players.forEach((p: any) => {
+              const key = p.steamid ?? p.steamId ?? p.name
+              const nameLower = p.name?.toLowerCase() ?? ''
+              const queryLower = query.toLowerCase()
+              
+              // Only include players whose name matches the search query
+              if (key && !seenPlayers.has(key) && nameLower.includes(queryLower)) {
+                seenPlayers.set(key, {
+                  id: key,
+                  name: p.name,
+                  steamId: p.steamid ?? p.steamId,
+                  avatarUrl: '',
+                  overview: {
+                    totalKills: p.kills ?? 0,
+                    totalDeaths: p.deaths ?? 0,
+                    kdRatio: p.deaths ? (p.kills ?? 0) / p.deaths : (p.kills ?? 0),
+                    totalDamage: p.damage ?? 0,
+                    matches: 1,
+                    timePlayed: 0
+                  },
+                  classStats: [],
+                  recentLogs: [{
+                    id: String(fullLog.id),
+                    title: fullLog.title ?? `Log ${fullLog.id}`,
+                    map: fullLog.map,
+                    timestamp: fullLog.date ? new Date(fullLog.date * 1000).toISOString() : fullLog.timestamp,
+                    result: fullLog.red_score > fullLog.blu_score ? 'Victory' : 'Defeat'
+                  }]
+                })
+              }
+            })
+          }
+        } catch {
+          // Skip failed log fetches
+        }
+      }
+      players = Array.from(seenPlayers.values()).slice(0, 10)
     }
 
     const payload = {
