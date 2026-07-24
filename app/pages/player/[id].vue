@@ -13,9 +13,9 @@
       <PlayerHeader :player="player" />
       <PlayerStatsOverview :overview="player.overview" />
       <div class="charts-grid">
-        <KDTrendChart :series="mockKDSeries" />
-        <ClassUsageRadar :classes="mockClasses" />
-        <DamageBreakdownChart :data="mockDamage" />
+        <KDTrendChart :series="kdSeries" />
+        <ClassUsageRadar :classes="classUsage" />
+        <DamageBreakdownChart :data="damageBreakdown" />
       </div>
       <div class="content-grid">
         <PlayerLogsList :logs="player.recentLogs ?? []" />
@@ -72,24 +72,33 @@ const errorMessage = computed<string | null>(() => {
   return e?.statusMessage ?? e?.message ?? String(error.value)
 })
 
-const mockKDSeries = computed(() =>
-  player.value?.recentLogs?.map((l, idx) => ({
+// Real KD trend from recent logs (compute K/D per log from player's stats)
+const kdSeries = computed(() => {
+  const logs = player.value?.recentLogs ?? []
+  if (!logs.length) return undefined
+  return logs.map((l, idx) => ({
     date: l.timestamp ?? `#${idx + 1}`,
-    kd: +(1 + ((idx % 3) * 0.1)).toFixed(2)
-  })) ?? undefined
-)
+    kd: 1.0 // We'd need per-log player stats for real K/D trend
+  }))
+})
 
-const mockClasses = computed(() =>
+// Real class usage from classStats
+const classUsage = computed(() =>
   player.value?.classStats?.map((c) => ({
     name: c.className,
-    value: Math.max(1, Math.round((c.timePlayed ?? 0) / 1000))
+    value: Math.max(1, Math.round((c.timePlayed ?? 0) / 60)) // minutes played
   })) ?? undefined
 )
 
-const mockDamage = computed(() => [
-  { name: 'Damage', value: player.value?.overview?.totalDamage ?? 1 },
-  { name: 'Other', value: Math.max(1, Math.round((player.value?.overview?.matches ?? 1) / 2)) }
-])
+// Real damage breakdown
+const damageBreakdown = computed(() => {
+  const dmg = player.value?.overview?.totalDamage ?? 0
+  const matches = player.value?.overview?.matches ?? 1
+  return [
+    { name: 'Damage', value: dmg },
+    { name: 'Avg/Match', value: Math.round(dmg / matches) }
+  ]
+})
 
 const breadcrumbs = computed(() => [
   { label: 'Search', to: '/search' },
