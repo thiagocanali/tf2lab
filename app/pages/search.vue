@@ -72,12 +72,16 @@
         </div>
         <div class="result-card__actions">
           <NuxtLink class="action-link action-link--primary" :to="`/player/${p.steamId ?? p.id}`">
-            View player profile
+            View player profile →
           </NuxtLink>
         </div>
       </article>
 
       <!-- Log Results -->
+      <p v-if="queryType === 'playername' && players.length === 0" class="player-search-hint">
+        We found related logs, but no player nick matched exactly. Try another alias or their SteamID64.
+      </p>
+
       <article v-for="r in results" :key="r.id" class="result-card">
         <div class="result-card__head">
           <h2>{{ r.title ?? ('Log ' + r.id) }}</h2>
@@ -122,7 +126,7 @@
         Log ID <code>{{ lastQuery }}</code> not found on logs.tf.
       </p>
       <p v-else-if="queryType === 'playername'">
-        No logs found for player "<strong>{{ lastQuery }}</strong>". Try their SteamID64 for better results.
+        No player cards matched "<strong>{{ lastQuery }}</strong>" in the logs.tf sample. Try an exact alias or SteamID64 for a reliable profile match.
       </p>
       <p v-else>
         Try a different SteamID, player name, or log ID.
@@ -473,6 +477,7 @@ onMounted(() => {
 .empty-state__icon { margin: 0; font-size: 2.5rem; color: var(--accent-soft); }
 .empty-state h2 { margin: 0; font-size: var(--font-size-xl); color: var(--text); }
 .empty-state p { margin: 0; color: var(--text-soft); }
+.player-search-hint { margin: 0; color: var(--text-soft); font-size: 0.9rem; }
 
 .empty-state__suggestions {
   margin-top: var(--space-md);

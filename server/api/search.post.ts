@@ -5,6 +5,7 @@ const cache = new Map()
 const CACHE_TTL = 60 * 1000 // 60s
 const STEAM64_BASE = '76561197960265728'
 const PROFILE_LOG_LIMIT = 5
+const NAME_SEARCH_LOG_LIMIT = 12
 
 function toSteam3Id(steamId: string): string {
   if (!/^\d{17}$/.test(steamId)) return steamId
@@ -44,11 +45,12 @@ function toLogReference(log: any) {
   }
 }
 
-async function fetchLogDetails(logsTfUrl: string, logs: any[]) {
+async function fetchLogDetails(logsTfUrl: string, logs: any[], limit = PROFILE_LOG_LIMIT) {
   return await Promise.all(
-    logs.slice(0, PROFILE_LOG_LIMIT).map(async (log) => {
+    logs.slice(0, limit).map(async (log) => {
       try {
-        return await $fetch(`${logsTfUrl}/${encodeURIComponent(log.id)}`, { method: 'GET' })
+        const detail = await $fetch(`${logsTfUrl}/${encodeURIComponent(log.id)}`, { method: 'GET' })
+        return { ...detail, id: log.id }
       } catch {
         return null
       }
@@ -86,6 +88,84 @@ function buildPlayerCard(steamId: string, details: any[]) {
       timePlayed: 0
     }
   }
+}
+
+function addDecimalStrings(left: string, right: string): string {
+  let carry = 0
+  let result = ''
+  const length = Math.max(left.length, right.length)
+
+  for (let index = 0; index < length; index++) {
+    const leftDigit = Number(left[left.length - 1 - index] ?? 0)
+    const rightDigit = Number(right[right.length - 1 - index] ?? 0)
+    const sum = leftDigit + rightDigit + carry
+    result = String(sum % 10) + result
+    carry = Math.floor(sum / 10)
+  }
+
+  return String(carry || '') + result
+}
+
+function toSteam64Id(steam3Id: string): string | undefined {
+  const match = /^\[U:1:(\d+)]$/.exec(steam3Id)
+  return match ? addDecimalStrings(STEAM64_BASE, match[1]) : undefined
+}
+
+function normalizePlayerName(name: string): string {
+  return name.trim().toLocaleLowerCase().replace(/\s+/g, ' ')
+}
+
+function getPlayersFromLog(log: any) {
+  const players = log?.players ?? {}
+  if (Array.isArray(players)) {
+    return players.map((player: any) => ({
+      ...player,
+      steamId: player.steamid ?? player.steamId ?? player.steamID,
+      name: player.name
+    }))
+  }
+
+  return Object.entries(players).map(([steam3Id, stats]: [string, any]) => ({
+    ...stats,
+    steamId: toSteam64Id(steam3Id),
+    name: log?.names?.[steam3Id]
+  }))
+}
+
+function buildNamePlayerCards(query: string, details: any[]) {
+  const normalizedQuery = normalizePlayerName(query)
+  const cards = new Map<string, any>()
+
+  for (const log of details.filter(Boolean)) {
+    for (const player of getPlayersFromLog(log)) {
+      if (!player.steamId || !player.name || !normalizePlayerName(player.name).includes(normalizedQuery)) continue
+      const card = cards.get(player.steamId) ?? {
+        id: player.steamId,
+        name: player.name,
+        steamId: player.steamId,
+        avatarUrl: '',
+        overview: { totalKills: 0, totalDeaths: 0, kdRatio: 0, totalDamage: 0, matches: 0, timePlayed: 0 }
+      }
+      card.overview.totalKills += player.kills ?? 0
+      card.overview.totalDeaths += player.deaths ?? 0
+      card.overview.totalDamage += player.dmg ?? player.damage ?? 0
+      card.overview.matches += 1
+      card.overview.kdRatio = card.overview.totalDeaths > 0
+        ? card.overview.totalKills / card.overview.totalDeaths
+        : card.overview.totalKills
+      cards.set(player.steamId, card)
+    }
+  }
+
+  return Array.from(cards.values())
+    .sort((first, second) => second.overview.matches - first.overview.matches || second.overview.totalDamage - first.overview.totalDamage)
+    .slice(0, 10)
+}
+
+function mergeLogs(...groups: any[][]) {
+  const unique = new Map<string, any>()
+  for (const log of groups.flat()) unique.set(String(log.id), log)
+  return Array.from(unique.values())
 }
 
 function detectQueryType(query: string): 'steamid' | 'logid' | 'playername' | 'unknown' {
@@ -171,60 +251,19 @@ export default defineEventHandler(async (event) => {
         players = [buildPlayerCard(query, details)]
       }
     } else if (queryType === 'playername') {
-      // For player name search, fetch recent logs and extract players from them
-      // First, search logs by title to get log IDs
-      const searchRes = await $fetch(`${logsTfUrl}?title=${encodeURIComponent(query)}&limit=${Math.min(perPage, 5)}`, { method: 'GET' })
-      const searchLogs = searchRes?.logs ?? searchRes?.results ?? []
-      results = searchLogs.map((log: any) => ({ id: String(log.id), ...log }))
-      total = searchRes?.total ?? results.length
+      // logs.tf indexes titles, not player names. Inspect title matches first and
+      // then a small recent sample, only returning cards whose nick actually matches.
+      const [titleResponse, recentResponse] = await Promise.all([
+        $fetch(`${logsTfUrl}?title=${encodeURIComponent(query)}&limit=${NAME_SEARCH_LOG_LIMIT}`, { method: 'GET' }),
+        $fetch(`${logsTfUrl}?limit=${NAME_SEARCH_LOG_LIMIT}`, { method: 'GET' })
+      ])
+      const titleLogs = titleResponse?.logs ?? titleResponse?.results ?? []
+      const recentLogs = recentResponse?.logs ?? recentResponse?.results ?? []
+      const candidateLogs = mergeLogs(titleLogs, recentLogs)
 
-      // For each log found, fetch full details to extract players
-      // We'll fetch up to 3 logs to get player data
-      const logsToFetch = searchLogs.slice(0, 3)
-      const seenPlayers = new Map<string, any>()
-
-      for (const log of logsToFetch) {
-        try {
-          const detailRes = await $fetch(`${logsTfUrl}?id=${encodeURIComponent(log.id)}`, { method: 'GET' })
-          const fullLog = Array.isArray(detailRes) ? detailRes[0] : (detailRes?.log ?? detailRes)
-          if (fullLog?.players) {
-            fullLog.players.forEach((p: any) => {
-              const key = p.steamid ?? p.steamId ?? p.name
-              const nameLower = p.name?.toLowerCase() ?? ''
-              const queryLower = query.toLowerCase()
-              
-              // Only include players whose name matches the search query
-              if (key && !seenPlayers.has(key) && nameLower.includes(queryLower)) {
-                seenPlayers.set(key, {
-                  id: key,
-                  name: p.name,
-                  steamId: p.steamid ?? p.steamId,
-                  avatarUrl: '',
-                  overview: {
-                    totalKills: p.kills ?? 0,
-                    totalDeaths: p.deaths ?? 0,
-                    kdRatio: p.deaths ? (p.kills ?? 0) / p.deaths : (p.kills ?? 0),
-                    totalDamage: p.damage ?? 0,
-                    matches: 1,
-                    timePlayed: 0
-                  },
-                  classStats: [],
-                  recentLogs: [{
-                    id: String(fullLog.id),
-                    title: fullLog.title ?? `Log ${fullLog.id}`,
-                    map: fullLog.map,
-                    timestamp: fullLog.date ? new Date(fullLog.date * 1000).toISOString() : fullLog.timestamp,
-                    result: fullLog.red_score > fullLog.blu_score ? 'Victory' : 'Defeat'
-                  }]
-                })
-              }
-            })
-          }
-        } catch {
-          // Skip failed log fetches
-        }
-      }
-      players = Array.from(seenPlayers.values()).slice(0, 10)
+      results = titleLogs.map((log: any) => ({ id: String(log.id), ...log }))
+      total = titleResponse?.total ?? results.length
+      players = buildNamePlayerCards(query, await fetchLogDetails(logsTfUrl, candidateLogs, NAME_SEARCH_LOG_LIMIT))
     }
 
     const payload = {
