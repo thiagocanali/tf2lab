@@ -4,29 +4,37 @@
     <BackButton fallback="/search" label="Voltar para Busca" />
 
     <Skeleton v-if="pending" width="100%" height="320px" />
-    <div v-else>
+    <div v-else class="player-shell">
       <PlayerHeader :player="player" />
       <PlayerStatsOverview :overview="player.overview" />
+
       <div class="charts-grid">
         <KDTrendChart :series="medicTrendSeries" title="Medic Healing Trend" series-name="Heals" color="var(--tf2-blu)" />
         <ClassUsageRadar :classes="mockClasses" />
         <DamageBreakdownChart :data="mockDamage" />
       </div>
+
       <div class="charts-grid charts-grid--secondary">
         <ClassPerformanceChart :stats="player.classStats ?? []" metric="heals" title="Classes que mais curam" />
         <ClassPerformanceChart :stats="player.classStats ?? []" metric="damage" title="Damage por classe" />
       </div>
+
       <div class="content-grid">
-        <PlayerLogsList :logs="player.recentLogs ?? []" />
+        <PlayerLogsList
+          :logs="visibleLogs"
+          :limit="selectedLogLimit"
+          @update:limit="selectedLogLimit = $event"
+        />
         <PlayerClassStats :classes="player.classStats ?? []" />
       </div>
     </div>
+
     <div v-if="error" class="error-message">{{ error.message ?? error }}</div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAsyncData } from '#app'
 import type { PlayerProfile } from '~/features/player/types'
@@ -46,7 +54,10 @@ const id = route.params.id as string
 
 const { data: res, pending, error } = await useAsyncData(`player-${id}`, () => $fetch(`/api/player/${encodeURIComponent(id)}`))
 const player = res?.data as PlayerProfile
+const selectedLogLimit = ref(10)
+const logLimitOptions = [5, 10, 20, 50]
 
+const visibleLogs = computed(() => (player?.recentLogs ?? []).slice(0, selectedLogLimit.value))
 const medicTrendSeries = player?.classStats?.find((stat) => stat.className === 'Medic')?.performanceTrend?.map((point) => ({ date: point.label, value: point.value })) ?? [
   { date: 'M1', value: 2100 },
   { date: 'M2', value: 2500 },
@@ -68,27 +79,42 @@ const breadcrumbs = computed(() => [
 </script>
 
 <style scoped>
-.page-player { padding: var(--space-xl) 0 }
-.content-grid {
-  display: grid;
-  grid-template-columns: 1.5fr 1fr;
+.page-player {
+  padding: var(--space-xl) 0;
+}
+
+.player-shell {
+  display: flex;
+  flex-direction: column;
   gap: var(--space-lg);
 }
+
+.content-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: var(--space-lg);
+  align-items: start;
+}
+
 .charts-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-lg);
-  margin: var(--space-lg) 0;
 }
+
 .charts-grid--secondary {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
+
 .error-message {
   margin-top: var(--space-md);
   color: var(--danger);
 }
+
 @media (max-width: 960px) {
-  .content-grid {
+  .content-grid,
+  .charts-grid,
+  .charts-grid--secondary {
     grid-template-columns: 1fr;
   }
 }

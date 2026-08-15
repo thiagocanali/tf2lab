@@ -2,6 +2,7 @@ import { getRouterParam } from 'h3'
 
 const STEAM64_BASE = '76561197960265728'
 const ANALYZED_LOG_LIMIT = 10
+const RECENT_LOG_LIMIT = 50
 
 function toSteam3Id(steamId: string): string {
   let borrow = 0
@@ -98,7 +99,7 @@ export default defineEventHandler(async (event) => {
         classMap.set(stat.type, current)
       }
 
-      if (recentLogs.length < 5) {
+      if (recentLogs.length < RECENT_LOG_LIMIT) {
         const teams = log.teams ?? {}
         const opponent = player.team === 'Red' ? 'Blue' : 'Red'
         const result = teams[player.team]?.score === undefined ? 'Recorded match' : teams[player.team].score > (teams[opponent]?.score ?? 0) ? 'Victory' : 'Defeat'
