@@ -17,12 +17,21 @@
         >
           {{ option }}
         </button>
+        <input
+          class="limit-input"
+          type="number"
+          min="1"
+          max="200"
+          :value="limit"
+          aria-label="Quantidade personalizada de logs"
+          @input="handleCustomLimit(($event.target as HTMLInputElement).value)"
+        />
       </div>
     </div>
 
     <div class="summary-row">
       <span>{{ logs.length }} logs</span>
-      <span class="meta">Padrão: 10</span>
+      <span class="meta">Limite atual: {{ limit }}</span>
     </div>
 
     <ul v-if="logs.length" class="log-items">
@@ -47,8 +56,15 @@ import type { PlayerLogReference } from '~~/features/player/types'
 const props = defineProps<{ logs: PlayerLogReference[]; limit?: number }>()
 const emit = defineEmits<{ 'update:limit': [value: number] }>()
 
-const limit = computed(() => props.limit ?? 10)
-const limitOptions = [5, 10, 20, 50]
+const limit = computed(() => Math.max(1, props.limit ?? 10))
+const limitOptions = [5, 10, 20, 30, 50]
+
+const handleCustomLimit = (value: string) => {
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed)) return
+  const nextValue = Math.min(Math.max(1, parsed), 200)
+  emit('update:limit', nextValue)
+}
 
 const date = (value?: string) => value ? new Date(value).toLocaleDateString() : 'Date unavailable'
 const number = (value?: number) => new Intl.NumberFormat('en-US').format(value ?? 0)
@@ -93,6 +109,7 @@ const number = (value?: number) => new Intl.NumberFormat('en-US').format(value ?
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 999px;
   padding: 0.35rem;
+  flex-wrap: wrap;
 }
 
 .limit-button {
@@ -105,6 +122,17 @@ const number = (value?: number) => new Intl.NumberFormat('en-US').format(value ?
   min-width: 2.75rem;
   font-weight: 700;
   transition: all 0.2s ease;
+}
+
+.limit-input {
+  width: 5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 0.45rem 0.65rem;
+  font: inherit;
+  text-align: center;
 }
 
 .limit-button.active {
