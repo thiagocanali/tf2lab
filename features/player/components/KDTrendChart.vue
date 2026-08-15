@@ -1,11 +1,13 @@
 <template>
   <div class="chart-shell">
-    <component :is="VueECharts" :options="options" autoresize style="height:320px; width:100%" />
+    <ClientOnly>
+      <component v-if="hasData" :is="VueECharts" :option="chartOptions" autoresize style="height: 320px; width: 100%;" />
+    </ClientOnly>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import VueECharts from 'vue-echarts'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
@@ -21,32 +23,48 @@ const props = defineProps<{
   color?: string
 }>()
 
-const series = computed(() => props.series ?? [
-  { date: '2026-06-01', kd: 1.12 },
-  { date: '2026-06-10', kd: 1.25 },
-  { date: '2026-06-20', kd: 1.18 },
-  { date: '2026-07-01', kd: 1.30 },
-  { date: '2026-07-12', kd: 1.36 }
-])
+const safeSeries = computed(() => (props.series?.length ? props.series : [
+  { date: 'M1', value: 1400 },
+  { date: 'M2', value: 1800 },
+  { date: 'M3', value: 2200 },
+  { date: 'M4', value: 2100 },
+  { date: 'M5', value: 2500 }
+]))
 
-const dates = computed(() => series.value.map((item) => item.date))
-const values = computed(() => series.value.map((item) => item.value ?? item.kd ?? 0))
-const chartTitle = computed(() => props.title ?? 'K/D Trend')
-const chartSeriesName = computed(() => props.seriesName ?? 'K/D')
-const color = computed(() => props.color ?? 'var(--tf2-red)')
-
-const options = ref({
-  title: { text: chartTitle.value, left: 'center', textStyle: { color: 'var(--text)' } },
+const hasData = computed(() => safeSeries.value.length > 0)
+const chartOptions = computed(() => ({
+  title: { text: props.title ?? 'K/D Trend', left: 'center', textStyle: { color: '#f5f7fb' } },
   tooltip: { trigger: 'axis' },
-  xAxis: { type: 'category', data: dates.value, axisLine: { lineStyle: { color: 'rgba(255,255,255,0.12)' } } },
-  yAxis: { type: 'value', axisLine: { lineStyle: { color: 'rgba(255,255,255,0.12)' } } },
-  grid: { left: '6%', right: '6%', bottom: '8%' },
-  series: [
-    { name: chartSeriesName.value, type: 'line', data: values.value, smooth: true, areaStyle: { opacity: 0.14 }, lineStyle: { width: 3, color }, itemStyle: { color } }
-  ]
-})
+  grid: { left: '8%', right: '6%', bottom: '12%', top: '18%' },
+  xAxis: {
+    type: 'category',
+    data: safeSeries.value.map((item) => item.date),
+    axisLine: { lineStyle: { color: 'rgba(255,255,255,0.12)' } },
+    axisLabel: { color: '#a9b0cc' }
+  },
+  yAxis: {
+    type: 'value',
+    axisLine: { lineStyle: { color: 'rgba(255,255,255,0.12)' } },
+    axisLabel: { color: '#a9b0cc' }
+  },
+  series: [{
+    name: props.seriesName ?? 'K/D',
+    type: 'line',
+    smooth: true,
+    data: safeSeries.value.map((item) => item.value ?? item.kd ?? 0),
+    areaStyle: { opacity: 0.15 },
+    lineStyle: { width: 3, color: props.color ?? '#ff3b30' },
+    itemStyle: { color: props.color ?? '#ff3b30' }
+  }]
+}))
 </script>
 
 <style scoped>
-.chart-shell { background: rgba(24,29,45,0.95); padding: 1rem; border-radius: 12px; border: 1px solid rgba(255,79,60,0.08) }
+.chart-shell {
+  min-height: 320px;
+  background: linear-gradient(180deg, rgba(18, 20, 32, 0.97), rgba(31, 36, 58, 0.95));
+  border: 1px solid rgba(255, 79, 60, 0.08);
+  border-radius: 16px;
+  padding: 1rem;
+}
 </style>
