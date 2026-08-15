@@ -4,10 +4,28 @@
     <BackButton fallback="/search" label="Back to search" />
 
     <div v-if="pending" class="log-skeleton" aria-busy="true" aria-live="polite">
-      <div class="skeleton-line skeleton-line--lg" />
-      <div class="skeleton-line" />
-      <div class="skeleton-line skeleton-line--md" />
-      <div class="skeleton-line skeleton-line--sm" />
+      <div class="skeleton-row">
+        <div class="skeleton-col">
+          <div class="skeleton-line skeleton-line--xs" />
+          <div class="skeleton-line skeleton-line--lg" />
+          <div class="skeleton-line skeleton-line--md" />
+        </div>
+        <div class="skeleton-scoreboard">
+          <div class="skeleton-pill" />
+          <div class="skeleton-pill" />
+          <div class="skeleton-pill" />
+        </div>
+      </div>
+      <div class="skeleton-table">
+        <div v-for="n in 6" :key="n" class="skeleton-row-table">
+          <div class="skeleton-line skeleton-line--name" />
+          <div class="skeleton-line skeleton-line--num" />
+          <div class="skeleton-line skeleton-line--num" />
+          <div class="skeleton-line skeleton-line--num" />
+          <div class="skeleton-line skeleton-line--num" />
+          <div class="skeleton-line skeleton-line--num" />
+        </div>
+      </div>
     </div>
 
     <LogDetail v-else-if="data" :data="data" />
@@ -57,7 +75,7 @@ const errorMessage = computed<string | null>(() => {
 
 const breadcrumbs = computed(() => [
   { label: 'Search', to: '/search' },
-  { label: data.value?.title ?? `Log ${id}` }
+  { label: data.value?.title?.trim() || `Log #${id}` }
 ])
 </script>
 
@@ -72,24 +90,74 @@ const breadcrumbs = computed(() => [
 .log-skeleton {
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: var(--space-lg);
   padding: var(--space-lg);
   border: 1px solid rgba(255, 79, 60, 0.12);
   border-radius: var(--radius);
   background: rgba(18, 20, 32, 0.5);
-  min-height: 200px;
+  min-height: 320px;
 }
+
+.skeleton-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-lg);
+  align-items: center;
+}
+.skeleton-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+.skeleton-scoreboard {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+}
+.skeleton-pill {
+  width: 92px;
+  height: 64px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.05));
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+.skeleton-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: var(--space-md);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(7, 8, 13, 0.35);
+}
+.skeleton-row-table {
+  display: grid;
+  grid-template-columns: minmax(10rem, 2fr) repeat(5, minmax(3rem, 1fr));
+  gap: 0.75rem;
+  align-items: center;
+}
+
 .skeleton-line {
-  height: 0.75rem;
+  height: 0.85rem;
   border-radius: 0.5rem;
   background: linear-gradient(90deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.05));
   background-size: 200% 100%;
   animation: shimmer 1.4s linear infinite;
 }
-.skeleton-line--lg { height: 1.4rem; width: 55%; }
+.skeleton-line--xs { width: 25%; height: 0.6rem; }
+.skeleton-line--lg { height: 1.6rem; width: 60%; }
 .skeleton-line--md { width: 70%; }
-.skeleton-line--sm { width: 35%; }
+.skeleton-line--name { width: 80%; }
+.skeleton-line--num { width: 70%; justify-self: end; }
+
 @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+@media (max-width: 780px) {
+  .skeleton-row { grid-template-columns: 1fr; }
+  .skeleton-scoreboard { justify-content: flex-start; }
+}
 
 .empty-state {
   display: flex;

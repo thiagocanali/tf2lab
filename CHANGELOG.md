@@ -25,6 +25,13 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Empty states e skeleton loaders melhorados nas páginas Log/Player
 - **Busca refatorada**: backend usa endpoints corretos da logs.tf API (`?player=`, `?title=`, `?id=`)
 - Headline da busca: "Find players & logs" (foco no jogador)
+- **Página de Log (`/log/[id]`) redesenhada**:
+  - `LogHeader.vue`: novo layout com eyebrow (`Log #ID` + map pill), título hierárquico, meta list (data, duração, jogadores) e scoreboard Red vs Blu com vencedor destacado e label "RED/BLU victory"
+  - `LogPlayersTable.vue`: tabela semântica com colunas Player, Team, K, D, A, K/D, DMG, DPM; ranking numérico, link para `/player/[steamId]`, team pills, cores de K/D (forte/ok/fraco), zebra striping, hover, empty state visual
+  - `LogStatsGrid.vue`: card "Match at a glance" com Players, Duration, Total kills, Total damage (sem redundância de Red/Blu)
+  - Página `/log/[id]`: skeleton mais rico (header + tabela) e empty state mantido
+  - Tema TF2 reforçado: gradientes vermelho/azul no header, cores semânticas, hover states, transições suaves
+  - Backend: `timestamp` agora `null` (em vez de `undefined`) quando ausente; `title` faz trim; `map` retornado como `null` para exibição de "—"; scores usam `-1` como sentinela para "não disponível" (em vez de `0` mascarado)
 
 ### Fixed
 - Navegação Search → Log → Player funcionando corretamente
@@ -32,6 +39,7 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Removidos arquivos órfãos em `pages/` (academy, competition, player/index)
 - Backend search: tratamento correto de respostas da API logs.tf (array vs object)
 - Busca por nome: não falha mais quando API não retorna players
+- Página de Log: valores vazios (data, mapa, duração) exibidos como "—" em vez de string em branco
 
 ---
 
