@@ -3,6 +3,90 @@ import { readBody } from 'h3'
 // Simple in-memory cache for quick server-side caching during dev.
 const cache = new Map()
 const CACHE_TTL = 60 * 1000 // 60s
+const STEAM64_BASE = '76561197960265728'
+const PROFILE_LOG_LIMIT = 5
+
+function toSteam3Id(steamId: string): string {
+  if (!/^\d{17}$/.test(steamId)) return steamId
+
+  let borrow = 0
+  const digits = new Array(steamId.length)
+  for (let index = steamId.length - 1; index >= 0; index--) {
+    const value = Number(steamId[index]) - Number(STEAM64_BASE[index]) - borrow
+    borrow = value < 0 ? 1 : 0
+    digits[index] = value < 0 ? value + 10 : value
+  }
+
+  return `[U:1:${digits.join('').replace(/^0+/, '') || '0'}]`
+}
+
+function getPlayerFromLog(log: any, steamId: string) {
+  const steam3Id = toSteam3Id(steamId)
+  const players = log?.players ?? {}
+
+  if (Array.isArray(players)) {
+    return players.find((player: any) =>
+      player.steamid === steamId || player.steamId === steamId || player.steamID === steamId
+    )
+  }
+
+  const stats = players[steam3Id]
+  return stats ? { ...stats, steamid: steamId, name: log?.names?.[steam3Id] } : undefined
+}
+
+function toLogReference(log: any) {
+  const info = log?.info ?? log
+  return {
+    id: String(log?.id ?? info?.id ?? ''),
+    title: info?.title ?? `Log ${log?.id ?? info?.id ?? ''}`,
+    map: info?.map,
+    timestamp: info?.date ? new Date(info.date * 1000).toISOString() : info?.timestamp
+  }
+}
+
+async function fetchLogDetails(logsTfUrl: string, logs: any[]) {
+  return await Promise.all(
+    logs.slice(0, PROFILE_LOG_LIMIT).map(async (log) => {
+      try {
+        return await $fetch(`${logsTfUrl}/${encodeURIComponent(log.id)}`, { method: 'GET' })
+      } catch {
+        return null
+      }
+    })
+  )
+}
+
+function buildPlayerCard(steamId: string, details: any[]) {
+  let totalKills = 0
+  let totalDeaths = 0
+  let totalDamage = 0
+  let name = `Player ${steamId.slice(-5)}`
+
+  const matchedLogs = details.filter(Boolean)
+  for (const log of matchedLogs) {
+    const player = getPlayerFromLog(log, steamId)
+    if (!player) continue
+    name = player.name ?? name
+    totalKills += player.kills ?? 0
+    totalDeaths += player.deaths ?? 0
+    totalDamage += player.dmg ?? player.damage ?? 0
+  }
+
+  return {
+    id: steamId,
+    name,
+    steamId,
+    avatarUrl: '',
+    overview: {
+      totalKills,
+      totalDeaths,
+      kdRatio: totalDeaths > 0 ? totalKills / totalDeaths : totalKills,
+      totalDamage,
+      matches: matchedLogs.length,
+      timePlayed: 0
+    }
+  }
+}
 
 function detectQueryType(query: string): 'steamid' | 'logid' | 'playername' | 'unknown' {
   const trimmed = query.trim()
@@ -65,19 +149,12 @@ export default defineEventHandler(async (event) => {
     let primaryResult: any = null
 
     if (queryType === 'logid') {
-      // Search for specific log by ID
-      // logs.tf API doesn't have exact ID filter, so we fetch recent logs and find matching one
-      const res = await $fetch(`${logsTfUrl}?id=${encodeURIComponent(query)}&limit=50`, { method: 'GET' })
-      const logs = res?.logs ?? res?.results ?? []
-      const matchingLog = logs.find((log: any) => String(log.id) === query)
-      if (matchingLog) {
-        primaryResult = matchingLog
-        results = [matchingLog]
+      // The list endpoint does not support filtering by ID; use the detail endpoint.
+      const log = await $fetch(`${logsTfUrl}/${encodeURIComponent(query)}`, { method: 'GET' })
+      if (log?.success !== false) {
+        primaryResult = toLogReference({ ...log, id: query })
+        results = [primaryResult]
         total = 1
-      } else {
-        // Fallback: return the first few logs as results
-        results = logs.slice(0, perPage).map((log: any) => ({ id: String(log.id), ...log }))
-        total = logs.length
       }
     } else if (queryType === 'steamid') {
       // Search logs by player SteamID
@@ -87,55 +164,11 @@ export default defineEventHandler(async (event) => {
       results = logs.map((log: any) => ({ id: String(log.id), ...log }))
       total = res?.total ?? results.length
       
-      // Build a player profile from the first log's player data
+      // List responses only contain log metadata. Fetch a small detail sample so
+      // the primary result is a real player card with meaningful performance stats.
       if (logs.length > 0) {
-        const firstLog = logs[0]
-        const playerInLog = firstLog.players?.find((p: any) => 
-          p.steamid === query || p.steamId === query || p.steamID === query
-        ) || firstLog.players?.[0]
-        
-        if (playerInLog) {
-          // Aggregate stats from all logs for this player
-          let totalKills = 0
-          let totalDeaths = 0
-          let totalAssists = 0
-          let totalDamage = 0
-          
-          logs.forEach((log: any) => {
-            const pl = log.players?.find((p: any) => 
-              p.steamid === query || p.steamId === query || p.steamID === query
-            )
-            if (pl) {
-              totalKills += pl.kills ?? 0
-              totalDeaths += pl.deaths ?? 0
-              totalAssists += pl.assists ?? 0
-              totalDamage += pl.damage ?? 0
-            }
-          })
-          
-          players = [{
-            id: query,
-            name: playerInLog.name ?? `Player ${query.slice(-5)}`,
-            steamId: query,
-            avatarUrl: '',
-            overview: {
-              totalKills,
-              totalDeaths,
-              kdRatio: totalDeaths > 0 ? totalKills / totalDeaths : totalKills,
-              totalDamage,
-              matches: logs.length,
-              timePlayed: 0
-            },
-            classStats: [],
-            recentLogs: logs.slice(0, 5).map((log: any) => ({
-              id: String(log.id),
-              title: log.title ?? `Log ${log.id}`,
-              map: log.map,
-              timestamp: log.date ? new Date(log.date * 1000).toISOString() : log.timestamp,
-              result: log.red_score > log.blu_score ? 'Victory' : 'Defeat'
-            }))
-          }]
-        }
+        const details = await fetchLogDetails(logsTfUrl, logs)
+        players = [buildPlayerCard(query, details)]
       }
     } else if (queryType === 'playername') {
       // For player name search, fetch recent logs and extract players from them
