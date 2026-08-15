@@ -1,145 +1,64 @@
 import { getRouterParam } from 'h3'
 
-export default defineEventHandler(async (event) => {
-  const id = getRouterParam(event, 'id')
+const STEAM64_BASE = '76561197960265728'
+const ANALYZED_LOG_LIMIT = 10
 
-  if (!id) {
-    return { error: 'Missing player id' }
+function toSteam3Id(steamId: string): string {
+  let borrow = 0
+  const digits = new Array(steamId.length)
+  for (let index = steamId.length - 1; index >= 0; index--) {
+    const value = Number(steamId[index]) - Number(STEAM64_BASE[index]) - borrow
+    borrow = value < 0 ? 1 : 0
+    digits[index] = value < 0 ? value + 10 : value
   }
+  return `[U:1:${digits.join('').replace(/^0+/, '') || '0'}]`
+}
 
-  const runtime = useRuntimeConfig()
-  const logsTfUrl = runtime?.public?.logsTfUrl ?? 'https://logs.tf/api/v1/log'
+function emptyProfile(id: string) {
+  return { id, name: `Player ${id.slice(-5)}`, steamId: id, avatarUrl: '', overview: { totalKills: 0, totalDeaths: 0, kdRatio: 0, totalDamage: 0, matches: 0, timePlayed: 0 }, classStats: [], recentLogs: [] }
+}
+
+export default defineEventHandler(async (event) => {
+  const id = String(getRouterParam(event, 'id') ?? '')
+  if (!id) return { error: 'Missing player id' }
+  const logsTfUrl = useRuntimeConfig()?.public?.logsTfUrl ?? 'https://logs.tf/api/v1/log'
 
   try {
-    // Fetch logs for this player
-    const res = await $fetch(`${logsTfUrl}?player=${encodeURIComponent(id)}&limit=50`, { method: 'GET' })
-    const logs = res?.logs ?? res?.results ?? []
-
-    if (logs.length === 0) {
-      // Return mock data if no logs found
-      return {
-        data: {
-          id: String(id),
-          name: `Player ${String(id).slice(-5)}`,
-          steamId: String(id),
-          avatarUrl: '',
-          overview: {
-            totalKills: 0,
-            totalDeaths: 0,
-            kdRatio: 0,
-            totalDamage: 0,
-            matches: 0,
-            timePlayed: 0
-          },
-          classStats: [],
-          recentLogs: []
-        }
-      }
-    }
-
-    // Aggregate stats from all logs
+    const response = await $fetch(`${logsTfUrl}?player=${encodeURIComponent(id)}&limit=50`, { method: 'GET' })
+    const summaries = response?.logs ?? response?.results ?? []
+    const details = await Promise.all(summaries.slice(0, ANALYZED_LOG_LIMIT).map(async (summary: any) => {
+      try { return { ...await $fetch(`${logsTfUrl}/${summary.id}`, { method: 'GET' }), id: summary.id } } catch { return null }
+    }))
+    const steam3Id = toSteam3Id(id)
+    const classMap = new Map<string, any>()
+    const recentLogs: any[] = []
+    let name = `Player ${id.slice(-5)}`
     let totalKills = 0
     let totalDeaths = 0
-    let totalAssists = 0
     let totalDamage = 0
-    const classMap = new Map<string, { timePlayed: number; kills: number; deaths: number; assists: number; damage: number }>()
-    const recentLogs: any[] = []
+    let timePlayed = 0
 
-    // Get player name from first log
-    const firstLog = logs[0]
-    const playerInFirstLog = firstLog.players?.find((p: any) =>
-      p.steamid === id || p.steamId === id || p.steamID === id
-    ) || firstLog.players?.[0]
-    const playerName = playerInFirstLog?.name ?? `Player ${String(id).slice(-5)}`
-
-    logs.forEach((log: any) => {
-      const pl = log.players?.find((p: any) =>
-        p.steamid === id || p.steamId === id || p.steamID === id
-      )
-      if (pl) {
-        totalKills += pl.kills ?? 0
-        totalDeaths += pl.deaths ?? 0
-        totalAssists += pl.assists ?? 0
-        totalDamage += pl.damage ?? 0
-
-        // Class stats
-        const className = pl.class ?? pl.type ?? 'Unknown'
-        const existing = classMap.get(className) || { timePlayed: 0, kills: 0, deaths: 0, assists: 0, damage: 0 }
-        existing.timePlayed += log.duration ?? 0
-        existing.kills += pl.kills ?? 0
-        existing.deaths += pl.deaths ?? 0
-        existing.assists += pl.assists ?? 0
-        existing.damage += pl.damage ?? 0
-        classMap.set(className, existing)
+    for (const log of details.filter(Boolean)) {
+      const player = log.players?.[steam3Id]
+      if (!player) continue
+      name = log.names?.[steam3Id] ?? name
+      totalKills += player.kills ?? 0
+      totalDeaths += player.deaths ?? 0
+      totalDamage += player.dmg ?? 0
+      timePlayed += log.length ?? log.info?.total_length ?? 0
+      for (const stat of player.class_stats ?? []) {
+        const current = classMap.get(stat.type) ?? { timePlayed: 0, kills: 0, deaths: 0, assists: 0, damage: 0 }
+        current.timePlayed += stat.total_time ?? 0; current.kills += stat.kills ?? 0; current.deaths += stat.deaths ?? 0; current.assists += stat.assists ?? 0; current.damage += stat.dmg ?? 0
+        classMap.set(stat.type, current)
       }
-
-      // Recent logs (up to 5)
       if (recentLogs.length < 5) {
-        recentLogs.push({
-          id: String(log.id),
-          title: log.title ?? `Log ${log.id}`,
-          map: log.map,
-          timestamp: log.date ? new Date(log.date * 1000).toISOString() : log.timestamp,
-          result: log.red_score > log.blu_score ? 'Victory' : 'Defeat'
-        })
-      }
-    })
-
-    const classStats = Array.from(classMap.entries()).map(([className, stats]) => ({
-      className,
-      timePlayed: stats.timePlayed,
-      kills: stats.kills,
-      deaths: stats.deaths,
-      assists: stats.assists,
-      damage: stats.damage,
-      kd: stats.deaths > 0 ? stats.kills / stats.deaths : stats.kills
-    }))
-
-    return {
-      data: {
-        id: String(id),
-        name: playerName,
-        steamId: String(id),
-        avatarUrl: '',
-        overview: {
-          totalKills,
-          totalDeaths,
-          kdRatio: totalDeaths > 0 ? totalKills / totalDeaths : totalKills,
-          totalDamage,
-          matches: logs.length,
-          timePlayed: logs.reduce((sum: number, log: any) => sum + (log.duration ?? 0), 0)
-        },
-        classStats,
-        recentLogs
+        const teams = log.teams ?? {}; const opponent = player.team === 'Red' ? 'Blue' : 'Red'
+        const result = teams[player.team]?.score === undefined ? 'Recorded match' : teams[player.team].score > teams[opponent]?.score ? 'Victory' : 'Defeat'
+        recentLogs.push({ id: String(log.id), title: log.info?.title ?? `Log ${log.id}`, map: log.info?.map, timestamp: log.info?.date ? new Date(log.info.date * 1000).toISOString() : undefined, result, kills: player.kills ?? 0, deaths: player.deaths ?? 0, damage: player.dmg ?? 0 })
       }
     }
-  } catch (err) {
-    // Fallback to mock on error
-    return {
-      data: {
-        id: String(id),
-        name: `Player ${String(id).slice(-5)}`,
-        steamId: String(id),
-        avatarUrl: '',
-        overview: {
-          totalKills: 12854,
-          totalDeaths: 9872,
-          kdRatio: 1.30,
-          totalDamage: 314752,
-          matches: 243,
-          timePlayed: 93240
-        },
-        classStats: [
-          { className: 'Soldier', timePlayed: 21000, kills: 4321, deaths: 3210, assists: 452, damage: 98000, kd: 1.35 },
-          { className: 'Scout', timePlayed: 18000, kills: 3210, deaths: 2400, assists: 390, damage: 76000, kd: 1.34 },
-          { className: 'Demo', timePlayed: 12000, kills: 2410, deaths: 1820, assists: 290, damage: 62000, kd: 1.32 }
-        ],
-        recentLogs: [
-          { id: `${id}-1001`, title: 'CP Process Final', map: 'cp_process_final', timestamp: '2026-07-18 21:45', result: 'Victory' },
-          { id: `${id}-1002`, title: 'Koth Viaduct', map: 'koth_viaduct_rc4', timestamp: '2026-07-16 19:20', result: 'Defeat' },
-          { id: `${id}-1003`, title: 'Payload Badwater', map: 'pl_badwater', timestamp: '2026-07-14 17:08', result: 'Victory' }
-        ]
-      }
-    }
-  }
+
+    const classStats = Array.from(classMap.entries()).map(([className, stats]) => ({ className, ...stats, kd: stats.deaths ? stats.kills / stats.deaths : stats.kills })).sort((a, b) => b.timePlayed - a.timePlayed)
+    return { data: { id, name, steamId: id, avatarUrl: '', overview: { totalKills, totalDeaths, kdRatio: totalDeaths ? totalKills / totalDeaths : totalKills, totalDamage, matches: details.filter(Boolean).length, timePlayed }, classStats, recentLogs } }
+  } catch { return { data: emptyProfile(id) } }
 })

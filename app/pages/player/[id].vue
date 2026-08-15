@@ -9,7 +9,7 @@
       <div class="skeleton-line skeleton-line--md" />
     </div>
 
-    <div v-else-if="player">
+    <div v-else-if="hasProfileData">
       <PlayerHeader :player="player" />
       <PlayerStatsOverview :overview="player.overview" />
       <div class="charts-grid">
@@ -27,8 +27,8 @@
       <p class="empty-state__icon" aria-hidden="true">∅</p>
       <h2>Player not found</h2>
       <p>
-        We couldn't load player <code>#{{ id }}</code>.
-        {{ errorMessage ? `Reason: ${errorMessage}` : 'Please check the SteamID and try again.' }}
+        No analyzed performance data is available for <code>#{{ id }}</code>.
+        {{ errorMessage ? `Reason: ${errorMessage}` : 'Check the SteamID or try a player with public logs.' }}
       </p>
       <div class="empty-state__actions">
         <BackButton fallback="/search" label="Back to search" />
@@ -66,6 +66,8 @@ const player = computed<PlayerProfile | undefined>(() => {
   return payload?.data
 })
 
+const hasProfileData = computed(() => (player.value?.overview.matches ?? 0) > 0)
+
 const errorMessage = computed<string | null>(() => {
   if (!error.value) return null
   const e = error.value as { message?: string; statusMessage?: string }
@@ -78,7 +80,7 @@ const kdSeries = computed(() => {
   if (!logs.length) return undefined
   return logs.map((l, idx) => ({
     date: l.timestamp ?? `#${idx + 1}`,
-    kd: 1.0 // We'd need per-log player stats for real K/D trend
+    kd: l.deaths ? (l.kills ?? 0) / l.deaths : (l.kills ?? 0)
   }))
 })
 

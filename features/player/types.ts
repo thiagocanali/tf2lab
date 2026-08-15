@@ -4,6 +4,9 @@ export interface PlayerLogReference {
   map?: string
   timestamp?: string
   result?: string
+  kills?: number
+  deaths?: number
+  damage?: number
 }
 
 export interface PlayerClassStat {
