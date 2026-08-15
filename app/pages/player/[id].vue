@@ -11,15 +11,19 @@
 
     <div v-else-if="hasProfileData">
       <PlayerHeader :player="player" />
-      <PlayerStatsOverview :overview="player.overview" />
+      <PlayerStatsOverview :overview="filteredOverview" />
       <div class="charts-grid">
         <KDTrendChart :series="kdSeries" />
         <ClassUsageRadar :classes="classUsage" />
         <DamageBreakdownChart :data="damageBreakdown" />
       </div>
       <div class="content-grid">
-        <PlayerLogsList :logs="player.recentLogs ?? []" />
-        <PlayerClassStats :classes="player.classStats ?? []" />
+        <PlayerLogsList
+          :logs="visibleLogs"
+          :limit="selectedLogLimit"
+          @update:limit="selectedLogLimit = $event"
+        />
+        <PlayerClassStats :classes="filteredClassStats" />
       </div>
     </div>
 
@@ -39,7 +43,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import type { PlayerProfile } from '~~/features/player/types'
 import Breadcrumbs from '~~/components/Breadcrumbs.vue'
 import BackButton from '~~/components/BackButton.vue'
@@ -66,6 +70,78 @@ const player = computed<PlayerProfile | undefined>(() => {
   return payload?.data
 })
 
+const selectedLogLimit = ref(10)
+const totalRecentLogs = computed(() => player.value?.recentLogs?.length ?? 0)
+
+const visibleLogs = computed(() => {
+  const logs = player.value?.recentLogs ?? []
+  const limit = Math.max(1, Math.min(selectedLogLimit.value, logs.length || 1))
+  return logs.slice(0, limit)
+})
+
+const selectedScale = computed(() => {
+  const total = totalRecentLogs.value || 1
+  return Math.min(1, (visibleLogs.value.length || 1) / total)
+})
+
+const filteredOverview = computed(() => {
+  const base = player.value?.overview ?? {
+    totalKills: 0,
+    totalDeaths: 0,
+    kdRatio: 0,
+    totalDamage: 0,
+    totalHeals: 0,
+    healsPerMatch: 0,
+    matches: 0,
+    timePlayed: 0
+  }
+
+  const selectedMatches = visibleLogs.value.length
+  const totalMatches = totalRecentLogs.value || 1
+  const scale = totalMatches > 0 ? Math.min(1, selectedMatches / totalMatches) : 1
+
+  const totalKills = Math.round((base.totalKills ?? 0) * scale)
+  const totalDeaths = Math.round((base.totalDeaths ?? 0) * scale)
+  const totalDamage = Math.round((base.totalDamage ?? 0) * scale)
+  const totalHeals = Math.round((base.totalHeals ?? 0) * scale)
+  const timePlayed = Math.round((base.timePlayed ?? 0) * scale)
+
+  return {
+    ...base,
+    totalKills,
+    totalDeaths,
+    kdRatio: totalDeaths > 0 ? totalKills / totalDeaths : totalKills,
+    totalDamage,
+    totalHeals,
+    healsPerMatch: selectedMatches ? totalHeals / selectedMatches : 0,
+    matches: selectedMatches,
+    timePlayed
+  }
+})
+
+const filteredClassStats = computed(() =>
+  (player.value?.classStats ?? []).map((stat) => {
+    const scaledKills = Math.round((stat.kills ?? 0) * selectedScale.value)
+    const scaledDeaths = Math.round((stat.deaths ?? 0) * selectedScale.value)
+    const scaledDamage = Math.round((stat.damage ?? 0) * selectedScale.value)
+    const scaledHeals = Math.round((stat.heals ?? 0) * selectedScale.value)
+
+    return {
+      ...stat,
+      kills: scaledKills,
+      deaths: scaledDeaths,
+      damage: scaledDamage,
+      heals: scaledHeals,
+      kd: scaledDeaths > 0 ? scaledKills / scaledDeaths : scaledKills,
+      healsPerMatch: (stat.healsPerMatch ?? 0) * selectedScale.value,
+      performanceTrend: (stat.performanceTrend ?? []).map((point) => ({
+        ...point,
+        value: Math.round(point.value * selectedScale.value)
+      }))
+    }
+  })
+)
+
 const hasProfileData = computed(() => (player.value?.overview.matches ?? 0) > 0)
 
 const errorMessage = computed<string | null>(() => {
@@ -76,7 +152,7 @@ const errorMessage = computed<string | null>(() => {
 
 // Real KD trend from recent logs (compute K/D per log from player's stats)
 const kdSeries = computed(() => {
-  const logs = player.value?.recentLogs ?? []
+  const logs = visibleLogs.value
   if (!logs.length) return undefined
   return logs.map((l, idx) => ({
     date: l.timestamp ?? `#${idx + 1}`,
@@ -88,17 +164,18 @@ const kdSeries = computed(() => {
 const classUsage = computed(() =>
   player.value?.classStats?.map((c) => ({
     name: c.className,
-    value: Math.max(1, Math.round((c.timePlayed ?? 0) / 60)) // minutes played
+    value: Math.max(1, Math.round(((c.timePlayed ?? 0) / Math.max(1, player.value?.overview.timePlayed ?? 1)) * 100))
   })) ?? undefined
 )
 
 // Real damage breakdown
 const damageBreakdown = computed(() => {
-  const dmg = player.value?.overview?.totalDamage ?? 0
-  const matches = player.value?.overview?.matches ?? 1
+  const dmg = filteredOverview.value.totalDamage ?? 0
+  const matches = filteredOverview.value.matches ?? 1
   return [
     { name: 'Damage', value: dmg },
-    { name: 'Avg/Match', value: Math.round(dmg / matches) }
+    { name: 'Avg/Match', value: Math.round(dmg / matches) },
+    { name: 'Logs', value: matches }
   ]
 })
 
