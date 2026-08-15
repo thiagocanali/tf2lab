@@ -14,27 +14,35 @@ import { TitleComponent, TooltipComponent, LegendComponent, GridComponent } from
 
 use([CanvasRenderer, LineChart, TitleComponent, TooltipComponent, LegendComponent, GridComponent])
 
-const props = defineProps<{ series?: { date: string; kd: number }[] }>()
+const props = defineProps<{
+  series?: { date: string; kd?: number; value?: number }[]
+  title?: string
+  seriesName?: string
+  color?: string
+}>()
 
-const series = props.series ?? [
+const series = computed(() => props.series ?? [
   { date: '2026-06-01', kd: 1.12 },
   { date: '2026-06-10', kd: 1.25 },
   { date: '2026-06-20', kd: 1.18 },
   { date: '2026-07-01', kd: 1.30 },
   { date: '2026-07-12', kd: 1.36 }
-]
+])
 
-const dates = computed(() => series.map((s) => s.date))
-const values = computed(() => series.map((s) => s.kd))
+const dates = computed(() => series.value.map((item) => item.date))
+const values = computed(() => series.value.map((item) => item.value ?? item.kd ?? 0))
+const chartTitle = computed(() => props.title ?? 'K/D Trend')
+const chartSeriesName = computed(() => props.seriesName ?? 'K/D')
+const color = computed(() => props.color ?? 'var(--tf2-red)')
 
 const options = ref({
-  title: { text: 'K/D Trend', left: 'center', textStyle: { color: 'var(--text)'} },
+  title: { text: chartTitle.value, left: 'center', textStyle: { color: 'var(--text)' } },
   tooltip: { trigger: 'axis' },
-  xAxis: { type: 'category', data: dates.value, axisLine: { lineStyle: { color: 'rgba(255,255,255,0.12)'} } },
-  yAxis: { type: 'value', axisLine: { lineStyle: { color: 'rgba(255,255,255,0.12)'} } },
+  xAxis: { type: 'category', data: dates.value, axisLine: { lineStyle: { color: 'rgba(255,255,255,0.12)' } } },
+  yAxis: { type: 'value', axisLine: { lineStyle: { color: 'rgba(255,255,255,0.12)' } } },
   grid: { left: '6%', right: '6%', bottom: '8%' },
   series: [
-    { name: 'K/D', type: 'line', data: values.value, smooth: true, areaStyle: {}, lineStyle: { width: 2, color: 'var(--tf2-red)' } }
+    { name: chartSeriesName.value, type: 'line', data: values.value, smooth: true, areaStyle: { opacity: 0.14 }, lineStyle: { width: 3, color }, itemStyle: { color } }
   ]
 })
 </script>

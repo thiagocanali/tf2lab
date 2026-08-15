@@ -11,7 +11,10 @@
           <span>Kills: {{ stat.kills }}</span>
           <span>Deaths: {{ stat.deaths }}</span>
           <span>K/D: {{ stat.kd?.toFixed(2) ?? '-' }}</span>
-          <span>Damage: {{ stat.damage ?? 0 }}</span>
+          <span v-if="stat.damage !== undefined">Damage: {{ stat.damage }}</span>
+          <span v-if="stat.heals !== undefined">Heals: {{ stat.heals }}</span>
+          <span v-if="stat.healsPerMatch !== undefined">Heals/partida: {{ stat.healsPerMatch.toFixed(1) }}</span>
+          <span v-if="stat.mostHealedClasses?.length">Top cura: {{ stat.mostHealedClasses[0].name }} ({{ stat.mostHealedClasses[0].value }})</span>
         </div>
       </div>
     </div>

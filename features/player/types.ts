@@ -9,6 +9,16 @@ export interface PlayerLogReference {
   damage?: number
 }
 
+export interface ClassMetricBreakdown {
+  name: string
+  value: number
+}
+
+export interface PlayerClassTrendPoint {
+  label: string
+  value: number
+}
+
 export interface PlayerClassStat {
   className: string
   timePlayed: number
@@ -17,6 +27,11 @@ export interface PlayerClassStat {
   assists?: number
   damage?: number
   kd?: number
+  heals?: number
+  healsPerMatch?: number
+  mostHealedClasses?: ClassMetricBreakdown[]
+  deathsByClass?: ClassMetricBreakdown[]
+  performanceTrend?: PlayerClassTrendPoint[]
 }
 
 export interface PlayerOverviewStats {
@@ -24,6 +39,8 @@ export interface PlayerOverviewStats {
   totalDeaths: number
   kdRatio: number
   totalDamage: number
+  totalHeals?: number
+  healsPerMatch?: number
   matches: number
   timePlayed: number
 }
