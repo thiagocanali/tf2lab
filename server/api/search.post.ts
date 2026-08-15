@@ -5,7 +5,7 @@ const cache = new Map()
 const CACHE_TTL = 60 * 1000 // 60s
 const STEAM64_BASE = '76561197960265728'
 const PROFILE_LOG_LIMIT = 5
-const NAME_SEARCH_LOG_LIMIT = 12
+const NAME_SEARCH_LOG_LIMIT = 40
 
 function toSteam3Id(steamId: string): string {
   if (!/^\d{17}$/.test(steamId)) return steamId
@@ -132,13 +132,31 @@ function getPlayersFromLog(log: any) {
   }))
 }
 
-function buildNamePlayerCards(query: string, details: any[]) {
+function scoreNameMatch(query: string, candidate: string): number {
   const normalizedQuery = normalizePlayerName(query)
+  const normalizedCandidate = normalizePlayerName(candidate)
+
+  if (!normalizedQuery || !normalizedCandidate) return 0
+  if (normalizedCandidate === normalizedQuery) return 100
+  if (normalizedCandidate.startsWith(normalizedQuery)) return 90
+  if (normalizedCandidate.includes(normalizedQuery)) return 80
+
+  const queryTokens = normalizedQuery.split(' ').filter(Boolean)
+  const candidateTokens = normalizedCandidate.split(' ').filter(Boolean)
+  const matches = queryTokens.filter((token) => candidateTokens.some((candidateToken) => candidateToken.includes(token))).length
+  if (matches > 0) return 60 + matches * 10
+  return 0
+}
+
+function buildNamePlayerCards(query: string, details: any[]) {
   const cards = new Map<string, any>()
 
   for (const log of details.filter(Boolean)) {
     for (const player of getPlayersFromLog(log)) {
-      if (!player.steamId || !player.name || !normalizePlayerName(player.name).includes(normalizedQuery)) continue
+      if (!player.steamId || !player.name) continue
+      const matchScore = scoreNameMatch(query, player.name)
+      if (matchScore <= 0) continue
+
       const card = cards.get(player.steamId) ?? {
         id: player.steamId,
         name: player.name,
@@ -146,6 +164,7 @@ function buildNamePlayerCards(query: string, details: any[]) {
         avatarUrl: '',
         overview: { totalKills: 0, totalDeaths: 0, kdRatio: 0, totalDamage: 0, matches: 0, timePlayed: 0 }
       }
+      card.name = card.name || player.name
       card.overview.totalKills += player.kills ?? 0
       card.overview.totalDeaths += player.deaths ?? 0
       card.overview.totalDamage += player.dmg ?? player.damage ?? 0
@@ -153,12 +172,13 @@ function buildNamePlayerCards(query: string, details: any[]) {
       card.overview.kdRatio = card.overview.totalDeaths > 0
         ? card.overview.totalKills / card.overview.totalDeaths
         : card.overview.totalKills
+      card.matchScore = Math.max(card.matchScore ?? 0, matchScore)
       cards.set(player.steamId, card)
     }
   }
 
   return Array.from(cards.values())
-    .sort((first, second) => second.overview.matches - first.overview.matches || second.overview.totalDamage - first.overview.totalDamage)
+    .sort((first, second) => (second.matchScore ?? 0) - (first.matchScore ?? 0) || second.overview.matches - first.overview.matches || second.overview.totalDamage - first.overview.totalDamage)
     .slice(0, 10)
 }
 
@@ -251,11 +271,11 @@ export default defineEventHandler(async (event) => {
         players = [buildPlayerCard(query, details)]
       }
     } else if (queryType === 'playername') {
-      // logs.tf indexes titles, not player names. Inspect title matches first and
-      // then a small recent sample, only returning cards whose nick actually matches.
+      // logs.tf indexes titles, not player names. We sample both title matches and
+      // recent public logs, then keep only cards whose actual nick matches the query.
       const [titleResponse, recentResponse] = await Promise.all([
         $fetch(`${logsTfUrl}?title=${encodeURIComponent(query)}&limit=${NAME_SEARCH_LOG_LIMIT}`, { method: 'GET' }),
-        $fetch(`${logsTfUrl}?limit=${NAME_SEARCH_LOG_LIMIT}`, { method: 'GET' })
+        $fetch(`${logsTfUrl}?limit=${NAME_SEARCH_LOG_LIMIT}&offset=0`, { method: 'GET' })
       ])
       const titleLogs = titleResponse?.logs ?? titleResponse?.results ?? []
       const recentLogs = recentResponse?.logs ?? recentResponse?.results ?? []

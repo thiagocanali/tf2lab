@@ -21,6 +21,8 @@
         <PlayerLogsList
           :logs="visibleLogs"
           :limit="selectedLogLimit"
+          :total-logs="player?.totalLogs ?? totalRecentLogs"
+          :requested-limit="selectedLogLimit"
           @update:limit="selectedLogLimit = $event"
         />
         <PlayerClassStats :classes="filteredClassStats" />

@@ -30,8 +30,9 @@
     </div>
 
     <div class="summary-row">
-      <span>{{ logs.length }} logs</span>
-      <span class="meta">Limite atual: {{ limit }}</span>
+      <span>{{ logs.length }} / {{ totalLogs }} logs</span>
+      <span v-if="returnedFewerThanRequested" class="meta warning">A API retornou menos do que pediu.</span>
+      <span v-else class="meta">Limite atual: {{ limit }}</span>
     </div>
 
     <ul v-if="logs.length" class="log-items">
@@ -53,10 +54,13 @@
 import { computed } from 'vue'
 import type { PlayerLogReference } from '~~/features/player/types'
 
-const props = defineProps<{ logs: PlayerLogReference[]; limit?: number }>()
+const props = defineProps<{ logs: PlayerLogReference[]; limit?: number; totalLogs?: number; requestedLimit?: number }>()
 const emit = defineEmits<{ 'update:limit': [value: number] }>()
 
 const limit = computed(() => Math.max(1, props.limit ?? 10))
+const totalLogs = computed(() => Math.max(0, Number(props.totalLogs ?? props.logs.length ?? 0)))
+const requestedLimit = computed(() => Math.max(1, Number(props.requestedLimit ?? props.limit ?? limit.value)))
+const returnedFewerThanRequested = computed(() => props.logs.length < requestedLimit.value && totalLogs.value > 0)
 const limitOptions = [5, 10, 20, 30, 50]
 
 const handleCustomLimit = (value: string) => {
@@ -152,6 +156,10 @@ const number = (value?: number) => new Intl.NumberFormat('en-US').format(value ?
 
 .meta {
   opacity: 0.8;
+}
+
+.warning {
+  color: #f7c57e;
 }
 
 .log-items {

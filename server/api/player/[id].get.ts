@@ -3,6 +3,32 @@ import { getRouterParam } from 'h3'
 const STEAM64_BASE = '76561197960265728'
 const ANALYZED_LOG_LIMIT = 10
 const RECENT_LOG_LIMIT = 50
+const LOGS_TF_MAX_PAGE_SIZE = 100
+
+async function fetchPlayerLogSummaries(logsTfUrl: string, playerId: string, requestedLimit: number) {
+  const targetLimit = Math.max(1, requestedLimit || ANALYZED_LOG_LIMIT)
+  const pageSize = Math.min(LOGS_TF_MAX_PAGE_SIZE, Math.max(targetLimit, 25))
+  const results: any[] = []
+  let total = 0
+  let offset = 0
+
+  while (results.length < Math.min(targetLimit, 250) && offset < 1000) {
+    const response = await $fetch(`${logsTfUrl}?player=${encodeURIComponent(playerId)}&limit=${pageSize}&offset=${offset}`, { method: 'GET' })
+    const pageLogs = response?.logs ?? response?.results ?? []
+    if (!pageLogs.length) break
+
+    results.push(...pageLogs)
+    total = Number(response?.total ?? results.length)
+
+    if (results.length >= total || pageLogs.length < pageSize) break
+    offset += pageSize
+  }
+
+  return {
+    logs: results.slice(0, targetLimit),
+    total: Number.isFinite(total) && total > 0 ? total : results.length
+  }
+}
 
 function toSteam3Id(steamId: string): string {
   let borrow = 0
@@ -60,9 +86,8 @@ export default defineEventHandler(async (event) => {
   const logsTfUrl = useRuntimeConfig()?.public?.logsTfUrl ?? 'https://logs.tf/api/v1/log'
 
   try {
-    const response = await $fetch(`${logsTfUrl}?player=${encodeURIComponent(id)}&limit=${RECENT_LOG_LIMIT}`, { method: 'GET' })
-    const summaries = response?.logs ?? response?.results ?? []
-    const totalLogs = summaries.length
+    const { logs: summaries, total: rawTotalLogs } = await fetchPlayerLogSummaries(logsTfUrl, id, safeLimit)
+    const totalLogs = Number.isFinite(rawTotalLogs) ? rawTotalLogs : summaries.length
     const details = await Promise.all(summaries.slice(0, safeLimit).map(async (summary: any) => {
       try { return { ...(await $fetch(`${logsTfUrl}/${summary.id}`, { method: 'GET' })), id: summary.id } } catch { return null }
     }))
