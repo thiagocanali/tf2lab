@@ -29,6 +29,12 @@ export interface PlayerClassStat {
   kd?: number
   heals?: number
   healsPerMatch?: number
+  avgKills?: number
+  avgDeaths?: number
+  avgDamage?: number
+  avgHeals?: number
+  avgKd?: number
+  matches?: number
   mostHealedClasses?: ClassMetricBreakdown[]
   deathsByClass?: ClassMetricBreakdown[]
   performanceTrend?: PlayerClassTrendPoint[]
@@ -43,6 +49,11 @@ export interface PlayerOverviewStats {
   healsPerMatch?: number
   matches: number
   timePlayed: number
+  avgKills?: number
+  avgDeaths?: number
+  avgDamage?: number
+  avgHeals?: number
+  avgKd?: number
 }
 
 export interface PlayerProfile {

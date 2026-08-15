@@ -15,12 +15,14 @@ const props = defineProps<{ overview: PlayerOverviewStats }>()
 const number = new Intl.NumberFormat('en-US')
 
 const stats = computed(() => [
-  { label: 'Kills', value: number.format(props.overview.totalKills) },
-  { label: 'Deaths', value: number.format(props.overview.totalDeaths) },
-  { label: 'K/D', value: props.overview.kdRatio.toFixed(2) },
-  { label: 'Damage', value: number.format(props.overview.totalDamage) },
-  { label: 'Heals', value: number.format(props.overview.totalHeals ?? 0) },
-  { label: 'Analyzed logs', value: props.overview.matches },
+  { label: 'K/D médio', value: (props.overview.avgKd ?? props.overview.kdRatio ?? 0).toFixed(2) },
+  { label: 'Kills / partida', value: (props.overview.avgKills ?? 0).toFixed(1) },
+  { label: 'Damage / partida', value: number.format(Math.round(props.overview.avgDamage ?? 0)) },
+  { label: 'Cura / partida', value: number.format(Math.round(props.overview.avgHeals ?? 0)) },
+  { label: 'Kills totais', value: number.format(props.overview.totalKills) },
+  { label: 'Damage total', value: number.format(props.overview.totalDamage) },
+  { label: 'Heals totais', value: number.format(props.overview.totalHeals ?? 0) },
+  { label: 'Partidas', value: props.overview.matches },
   { label: 'Tempo jogado', value: `${Math.floor(props.overview.timePlayed / 3600)}h` }
 ])
 </script>

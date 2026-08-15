@@ -101,18 +101,19 @@ const filteredOverview = computed(() => {
     totalHeals: 0,
     healsPerMatch: 0,
     matches: 0,
-    timePlayed: 0
+    timePlayed: 0,
+    avgKills: 0,
+    avgDeaths: 0,
+    avgDamage: 0,
+    avgHeals: 0,
+    avgKd: 0
   }
 
-  const selectedMatches = visibleLogs.value.length
-  const totalMatches = totalRecentLogs.value || 1
-  const scale = totalMatches > 0 ? Math.min(1, selectedMatches / totalMatches) : 1
-
-  const totalKills = Math.round((base.totalKills ?? 0) * scale)
-  const totalDeaths = Math.round((base.totalDeaths ?? 0) * scale)
-  const totalDamage = Math.round((base.totalDamage ?? 0) * scale)
-  const totalHeals = Math.round((base.totalHeals ?? 0) * scale)
-  const timePlayed = Math.round((base.timePlayed ?? 0) * scale)
+  const matches = Math.max(1, visibleLogs.value.length || base.matches || 1)
+  const totalKills = Math.round(base.totalKills ?? 0)
+  const totalDeaths = Math.round(base.totalDeaths ?? 0)
+  const totalDamage = Math.round(base.totalDamage ?? 0)
+  const totalHeals = Math.round(base.totalHeals ?? 0)
 
   return {
     ...base,
@@ -121,30 +122,41 @@ const filteredOverview = computed(() => {
     kdRatio: totalDeaths > 0 ? totalKills / totalDeaths : totalKills,
     totalDamage,
     totalHeals,
-    healsPerMatch: selectedMatches ? totalHeals / selectedMatches : 0,
-    matches: selectedMatches,
-    timePlayed
+    healsPerMatch: matches ? totalHeals / matches : 0,
+    matches,
+    avgKills: base.avgKills ?? (matches ? totalKills / matches : 0),
+    avgDeaths: base.avgDeaths ?? (matches ? totalDeaths / matches : 0),
+    avgDamage: base.avgDamage ?? (matches ? totalDamage / matches : 0),
+    avgHeals: base.avgHeals ?? (matches ? totalHeals / matches : 0),
+    avgKd: base.avgKd ?? (totalDeaths > 0 ? totalKills / totalDeaths : totalKills),
+    timePlayed: base.timePlayed ?? 0
   }
 })
 
 const filteredClassStats = computed(() =>
   (player.value?.classStats ?? []).map((stat) => {
-    const scaledKills = Math.round((stat.kills ?? 0) * selectedScale.value)
-    const scaledDeaths = Math.round((stat.deaths ?? 0) * selectedScale.value)
-    const scaledDamage = Math.round((stat.damage ?? 0) * selectedScale.value)
-    const scaledHeals = Math.round((stat.heals ?? 0) * selectedScale.value)
+    const matchCount = Math.max(1, visibleLogs.value.length || 1)
+    const kills = stat.kills ?? 0
+    const deaths = stat.deaths ?? 0
+    const damage = stat.damage ?? 0
+    const heals = stat.heals ?? 0
 
     return {
       ...stat,
-      kills: scaledKills,
-      deaths: scaledDeaths,
-      damage: scaledDamage,
-      heals: scaledHeals,
-      kd: scaledDeaths > 0 ? scaledKills / scaledDeaths : scaledKills,
-      healsPerMatch: (stat.healsPerMatch ?? 0) * selectedScale.value,
+      kills,
+      deaths,
+      damage,
+      heals,
+      kd: deaths > 0 ? kills / deaths : kills,
+      avgKills: stat.avgKills ?? (matchCount ? kills / matchCount : 0),
+      avgDeaths: stat.avgDeaths ?? (matchCount ? deaths / matchCount : 0),
+      avgDamage: stat.avgDamage ?? (matchCount ? damage / matchCount : 0),
+      avgHeals: stat.avgHeals ?? (matchCount ? heals / matchCount : 0),
+      avgKd: stat.avgKd ?? (deaths > 0 ? kills / deaths : kills),
+      healsPerMatch: stat.healsPerMatch ?? (matchCount ? heals / matchCount : 0),
       performanceTrend: (stat.performanceTrend ?? []).map((point) => ({
         ...point,
-        value: Math.round(point.value * selectedScale.value)
+        value: point.value
       }))
     }
   })

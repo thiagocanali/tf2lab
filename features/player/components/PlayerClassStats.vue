@@ -8,12 +8,12 @@
       <div class="class-card" v-for="stat in classes" :key="stat.className">
         <div class="class-label">{{ stat.className }}</div>
         <div class="class-values">
-          <span>Kills: {{ stat.kills }}</span>
-          <span>Deaths: {{ stat.deaths }}</span>
-          <span>K/D: {{ stat.kd?.toFixed(2) ?? '-' }}</span>
-          <span v-if="stat.damage !== undefined">Damage: {{ stat.damage }}</span>
-          <span v-if="stat.heals !== undefined">Heals: {{ stat.heals }}</span>
-          <span v-if="stat.healsPerMatch !== undefined">Heals/partida: {{ stat.healsPerMatch.toFixed(1) }}</span>
+          <span>Kills / partida: {{ (stat.avgKills ?? 0).toFixed(1) }}</span>
+          <span>Deaths / partida: {{ (stat.avgDeaths ?? 0).toFixed(1) }}</span>
+          <span>K/D: {{ stat.avgKd?.toFixed(2) ?? stat.kd?.toFixed(2) ?? '-' }}</span>
+          <span v-if="stat.avgDamage !== undefined">Damage / partida: {{ Math.round(stat.avgDamage ?? 0) }}</span>
+          <span v-if="stat.avgHeals !== undefined">Cura / partida: {{ Math.round(stat.avgHeals ?? 0) }}</span>
+          <span v-if="stat.healsPerMatch !== undefined">Heals total: {{ stat.healsPerMatch.toFixed(1) }}</span>
           <span v-if="stat.mostHealedClasses?.length">Top cura: {{ stat.mostHealedClasses[0].name }} ({{ stat.mostHealedClasses[0].value }})</span>
         </div>
       </div>

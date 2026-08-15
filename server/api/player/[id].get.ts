@@ -12,7 +12,7 @@ async function fetchPlayerLogSummaries(logsTfUrl: string, playerId: string, requ
   let total = 0
   let offset = 0
 
-  while (results.length < Math.min(targetLimit, 250) && offset < 1000) {
+  while (results.length < targetLimit && offset < 10000) {
     const response = await $fetch(`${logsTfUrl}?player=${encodeURIComponent(playerId)}&limit=${pageSize}&offset=${offset}`, { method: 'GET' })
     const pageLogs = response?.logs ?? response?.results ?? []
     if (!pageLogs.length) break
@@ -149,18 +149,26 @@ export default defineEventHandler(async (event) => {
       }
     }
 
+    const analyzedMatches = Math.max(1, details.filter(Boolean).length)
     const classStats = Array.from(classMap.entries())
       .map(([className, stats]) => {
         const safeHeals = stats.heals ?? 0
         const safeDamage = stats.damage ?? 0
         const basePerformance = className === 'Medic' ? safeHeals : safeDamage
+        const matchCount = Math.max(1, stats.matches ?? analyzedMatches)
 
         return {
           className,
           ...stats,
           kd: stats.deaths ? stats.kills / stats.deaths : stats.kills,
           heals: safeHeals,
-          healsPerMatch: recentLogs.length ? safeHeals / recentLogs.length : safeHeals,
+          healsPerMatch: matchCount ? safeHeals / matchCount : safeHeals,
+          avgKills: matchCount ? (stats.kills ?? 0) / matchCount : 0,
+          avgDeaths: matchCount ? (stats.deaths ?? 0) / matchCount : 0,
+          avgDamage: matchCount ? (safeDamage || 0) / matchCount : 0,
+          avgHeals: matchCount ? (safeHeals || 0) / matchCount : 0,
+          avgKd: stats.deaths ? (stats.kills ?? 0) / stats.deaths : stats.kills,
+          matches: matchCount,
           mostHealedClasses: className === 'Medic'
             ? [
                 { name: 'Soldier', value: Math.max(1200, Math.round(safeHeals * 0.42)) },
@@ -180,6 +188,13 @@ export default defineEventHandler(async (event) => {
       })
       .sort((a, b) => b.timePlayed - a.timePlayed)
 
+    const matches = Math.max(1, recentLogs.length)
+    const avgKills = matches ? totalKills / matches : 0
+    const avgDeaths = matches ? totalDeaths / matches : 0
+    const avgDamage = matches ? totalDamage / matches : 0
+    const avgHeals = matches ? totalHeals / matches : 0
+    const avgKd = totalDeaths ? totalKills / totalDeaths : totalKills
+
     return {
       data: {
         id,
@@ -190,12 +205,17 @@ export default defineEventHandler(async (event) => {
         overview: {
           totalKills,
           totalDeaths,
-          kdRatio: totalDeaths ? totalKills / totalDeaths : totalKills,
+          kdRatio: avgKd,
           totalDamage,
           totalHeals,
-          healsPerMatch: recentLogs.length ? totalHeals / recentLogs.length : totalHeals,
-          matches: recentLogs.length,
-          timePlayed
+          healsPerMatch: matches ? totalHeals / matches : totalHeals,
+          matches,
+          timePlayed,
+          avgKills,
+          avgDeaths,
+          avgDamage,
+          avgHeals,
+          avgKd
         },
         classStats,
         recentLogs
