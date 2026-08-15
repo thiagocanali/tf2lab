@@ -52,9 +52,18 @@ import ClassPerformanceChart from '~/features/player/components/ClassPerformance
 const route = useRoute()
 const id = route.params.id as string
 
-const { data: res, pending, error } = await useAsyncData(`player-${id}`, () => $fetch(`/api/player/${encodeURIComponent(id)}`))
-const player = res?.data as PlayerProfile
 const selectedLogLimit = ref(10)
+const { data: res, pending, error } = await useAsyncData(
+  `player-${id}`,
+  () => $fetch(`/api/player/${encodeURIComponent(id)}`, {
+    query: { limit: selectedLogLimit.value }
+  }),
+  {
+    watch: [selectedLogLimit]
+  }
+)
+
+const player = res?.data as PlayerProfile
 const logLimitOptions = [5, 10, 20, 30, 50]
 
 const totalRecentLogs = computed(() => player?.recentLogs?.length ?? 0)
@@ -161,7 +170,7 @@ const breadcrumbs = computed(() => [
 .player-shell {
   display: flex;
   flex-direction: column;
-  gap: var(--space-lg);
+  gap: var(--space-xl);
 }
 
 .content-grid {

@@ -50,12 +50,20 @@ function buildPerformanceTrend(base: number, labelPrefix = 'M') {
 export default defineEventHandler(async (event) => {
   const id = String(getRouterParam(event, 'id') ?? '')
   if (!id) return { error: 'Missing player id' }
+
+  const query = getQuery(event)
+  const requestedLimit = Number(query.limit ?? ANALYZED_LOG_LIMIT)
+  const safeLimit = Number.isFinite(requestedLimit)
+    ? Math.min(Math.max(1, requestedLimit), RECENT_LOG_LIMIT)
+    : ANALYZED_LOG_LIMIT
+
   const logsTfUrl = useRuntimeConfig()?.public?.logsTfUrl ?? 'https://logs.tf/api/v1/log'
 
   try {
-    const response = await $fetch(`${logsTfUrl}?player=${encodeURIComponent(id)}&limit=50`, { method: 'GET' })
+    const response = await $fetch(`${logsTfUrl}?player=${encodeURIComponent(id)}&limit=${RECENT_LOG_LIMIT}`, { method: 'GET' })
     const summaries = response?.logs ?? response?.results ?? []
-    const details = await Promise.all(summaries.slice(0, ANALYZED_LOG_LIMIT).map(async (summary: any) => {
+    const totalLogs = summaries.length
+    const details = await Promise.all(summaries.slice(0, safeLimit).map(async (summary: any) => {
       try { return { ...(await $fetch(`${logsTfUrl}/${summary.id}`, { method: 'GET' })), id: summary.id } } catch { return null }
     }))
 
@@ -153,6 +161,7 @@ export default defineEventHandler(async (event) => {
         name,
         steamId: id,
         avatarUrl: '',
+        totalLogs: totalLogs,
         overview: {
           totalKills,
           totalDeaths,

@@ -60,9 +60,16 @@ import DamageBreakdownChart from '~~/features/player/components/DamageBreakdownC
 const route = useRoute()
 const id = String(route.params.id ?? '')
 
+const selectedLogLimit = ref(10)
+
 const { data: res, pending, error } = await useAsyncData(
   `player-${id}`,
-  () => $fetch(`/api/player/${encodeURIComponent(id)}`)
+  () => $fetch(`/api/player/${encodeURIComponent(id)}`, {
+    query: { limit: selectedLogLimit.value }
+  }),
+  {
+    watch: [selectedLogLimit]
+  }
 )
 
 const player = computed<PlayerProfile | undefined>(() => {
@@ -70,7 +77,6 @@ const player = computed<PlayerProfile | undefined>(() => {
   return payload?.data
 })
 
-const selectedLogLimit = ref(10)
 const totalRecentLogs = computed(() => player.value?.recentLogs?.length ?? 0)
 
 const visibleLogs = computed(() => {

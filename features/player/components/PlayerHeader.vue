@@ -14,6 +14,8 @@
             <span>SteamID: {{ player.steamId ?? player.id }}</span>
             <span>•</span>
             <span>Tempo jogado: {{ formattedTime }}</span>
+            <span>•</span>
+            <span>{{ player.totalLogs ?? player.overview?.matches ?? 0 }} logs</span>
           </div>
         </div>
       </div>
@@ -51,6 +53,7 @@ const formattedTime = computed(() => {
   border-radius: var(--radius);
   padding: var(--space-lg);
   box-shadow: var(--shadow-soft);
+  margin-bottom: var(--space-md);
 }
 
 .player-header-row {
