@@ -2,7 +2,8 @@ import { getRouterParam } from 'h3'
 
 const STEAM64_BASE = '76561197960265728'
 const ANALYZED_LOG_LIMIT = 10
-const RECENT_LOG_LIMIT = 50
+const MAX_PLAYER_LOG_LIMIT = 200
+const MAX_PLAYER_LOGS_TO_KEEP = 200
 const LOGS_TF_MAX_PAGE_SIZE = 100
 
 async function fetchPlayerLogSummaries(logsTfUrl: string, playerId: string, requestedLimit: number) {
@@ -12,7 +13,7 @@ async function fetchPlayerLogSummaries(logsTfUrl: string, playerId: string, requ
   let total = 0
   let offset = 0
 
-  while (results.length < targetLimit && offset < 10000) {
+  while (results.length < Math.min(targetLimit, MAX_PLAYER_LOGS_TO_KEEP) && offset < 10000) {
     const response = await $fetch(`${logsTfUrl}?player=${encodeURIComponent(playerId)}&limit=${pageSize}&offset=${offset}`, { method: 'GET' })
     const pageLogs = response?.logs ?? response?.results ?? []
     if (!pageLogs.length) break
@@ -25,7 +26,7 @@ async function fetchPlayerLogSummaries(logsTfUrl: string, playerId: string, requ
   }
 
   return {
-    logs: results.slice(0, targetLimit),
+    logs: results.slice(0, Math.min(targetLimit, MAX_PLAYER_LOGS_TO_KEEP)),
     total: Number.isFinite(total) && total > 0 ? total : results.length
   }
 }
@@ -80,7 +81,7 @@ export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const requestedLimit = Number(query.limit ?? ANALYZED_LOG_LIMIT)
   const safeLimit = Number.isFinite(requestedLimit)
-    ? Math.min(Math.max(1, requestedLimit), RECENT_LOG_LIMIT)
+    ? Math.min(Math.max(1, requestedLimit), MAX_PLAYER_LOG_LIMIT)
     : ANALYZED_LOG_LIMIT
 
   const logsTfUrl = useRuntimeConfig()?.public?.logsTfUrl ?? 'https://logs.tf/api/v1/log'
@@ -132,7 +133,7 @@ export default defineEventHandler(async (event) => {
         classMap.set(stat.type, current)
       }
 
-      if (recentLogs.length < RECENT_LOG_LIMIT) {
+      if (recentLogs.length < MAX_PLAYER_LOGS_TO_KEEP) {
         const teams = log.teams ?? {}
         const opponent = player.team === 'Red' ? 'Blue' : 'Red'
         const result = teams[player.team]?.score === undefined ? 'Recorded match' : teams[player.team].score > (teams[opponent]?.score ?? 0) ? 'Victory' : 'Defeat'

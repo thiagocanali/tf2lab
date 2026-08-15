@@ -61,7 +61,7 @@ const limit = computed(() => Math.max(1, props.limit ?? 10))
 const totalLogs = computed(() => Math.max(0, Number(props.totalLogs ?? props.logs.length ?? 0)))
 const requestedLimit = computed(() => Math.max(1, Number(props.requestedLimit ?? props.limit ?? limit.value)))
 const returnedFewerThanRequested = computed(() => props.logs.length < requestedLimit.value && totalLogs.value > 0)
-const limitOptions = [5, 10, 20, 30, 50]
+const limitOptions = [5, 10, 20, 30, 50, 100]
 
 const handleCustomLimit = (value: string) => {
   const parsed = Number(value)

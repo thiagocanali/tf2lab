@@ -62,7 +62,7 @@ import DamageBreakdownChart from '~~/features/player/components/DamageBreakdownC
 const route = useRoute()
 const id = String(route.params.id ?? '')
 
-const selectedLogLimit = ref(10)
+const selectedLogLimit = ref(30)
 
 const { data: res, pending, error } = await useAsyncData(
   `player-${id}`,
