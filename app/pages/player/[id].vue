@@ -47,36 +47,7 @@
         <ClassPerformanceChart :stats="filteredClassStats" metric="damage" title="Damage por classe" />
       </div>
 
-      <section class="best-logs-panel">
-        <div class="section-header">
-          <div>
-            <p class="eyebrow">Melhores logs</p>
-            <h3>Partidas mais fortes</h3>
-          </div>
-        </div>
-
-        <div class="best-logs-grid">
-          <article v-for="log in bestLogs" :key="log.id" class="best-log-card">
-            <div class="best-log-card__header">
-              <strong>{{ log.title ?? `Log ${log.id}` }}</strong>
-              <span class="best-log-score">{{ scoreLabel(log) }}</span>
-            </div>
-
-            <div class="best-log-card__meta">
-              <span>{{ log.map ?? 'Mapa desconhecido' }}</span>
-              <span>•</span>
-              <span>{{ formatDate(log.timestamp) }}</span>
-            </div>
-
-            <div class="best-log-card__stats">
-              <span>{{ log.kills ?? 0 }} K</span>
-              <span>{{ log.deaths ?? 0 }} D</span>
-              <span>{{ formatNumber(log.damage ?? 0) }} dmg</span>
-              <span>{{ formatNumber(log.heals ?? 0) }} heals</span>
-            </div>
-          </article>
-        </div>
-      </section>
+      <BestLogsPanel :logs="bestLogs" :total-logs-analyzed="totalRecentLogs" />
 
       <div class="content-grid">
         <PlayerLogsList
@@ -118,6 +89,7 @@ import KDTrendChart from '~~/features/player/components/KDTrendChart.vue'
 import ClassUsageRadar from '~~/features/player/components/ClassUsageRadar.vue'
 import DamageBreakdownChart from '~~/features/player/components/DamageBreakdownChart.vue'
 import ClassPerformanceChart from '~~/features/player/components/ClassPerformanceChart.vue'
+import BestLogsPanel from '~~/features/player/components/BestLogsPanel.vue'
 
 // `useRoute`, `useAsyncData`, `$fetch` are auto-imported by Nuxt.
 
