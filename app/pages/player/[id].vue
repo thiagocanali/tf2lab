@@ -19,6 +19,8 @@
 
       <HighlightsPanel :overview="filteredOverview" :class-stats="filteredClassStats" :recent-logs="visibleLogs" />
 
+      <TrendAnalysisPanel :recent-logs="visibleLogs" />
+
       <div class="analysis-toolbar">
         <div>
           <p class="eyebrow">Análise por período</p>
@@ -99,6 +101,7 @@ import BestLogsPanel from '~~/features/player/components/BestLogsPanel.vue'
 import PerformanceInsights from '~~/features/player/components/PerformanceInsights.vue'
 import RecommendationsPanel from '~~/features/player/components/RecommendationsPanel.vue'
 import HighlightsPanel from '~~/features/player/components/HighlightsPanel.vue'
+import TrendAnalysisPanel from '~~/features/player/components/TrendAnalysisPanel.vue'
 
 // `useRoute`, `useAsyncData`, `$fetch` are auto-imported by Nuxt.
 
