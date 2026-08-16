@@ -13,6 +13,29 @@
       <PlayerHeader :player="player" />
       <PlayerStatsOverview :overview="filteredOverview" />
 
+      <div class="analysis-toolbar">
+        <div>
+          <p class="eyebrow">Análise por período</p>
+          <h3>{{ periodLabel }}</h3>
+        </div>
+        <div class="period-selector" role="tablist" aria-label="Período de análise">
+          <button
+            v-for="option in periodOptions"
+            :key="option"
+            type="button"
+            class="period-button"
+            :class="{ active: selectedPeriod === option }"
+            @click="selectedPeriod = option"
+          >
+            {{ option === 'all' ? 'Tudo' : `${option}` }}
+          </button>
+        </div>
+      </div>
+
+      <div v-if="!hasEnoughLogsForAnalysis" class="analysis-warning">
+        A análise de evolução precisa de pelo menos {{ minimumLogsForAnalysis }} logs para ser confiável.
+      </div>
+
       <div class="charts-grid">
         <KDTrendChart :series="kdSeries" title="K/D por partida" series-name="K/D" color="var(--tf2-red)" />
         <KDTrendChart :series="damageTrendSeries" title="Damage por partida" series-name="Damage" color="#4ade80" />
@@ -102,6 +125,9 @@ const route = useRoute()
 const id = String(route.params.id ?? '')
 
 const selectedLogLimit = ref(30)
+const selectedPeriod = ref<number | 'all'>(30)
+const minimumLogsForAnalysis = 5
+const periodOptions: Array<number | 'all'> = [10, 30, 60, 'all']
 
 const { data: res, pending, error } = await useAsyncData(
   `player-${id}`,
@@ -119,10 +145,14 @@ const player = computed<PlayerProfile | undefined>(() => {
 })
 
 const totalRecentLogs = computed(() => player.value?.recentLogs?.length ?? 0)
+const periodLabel = computed(() => selectedPeriod.value === 'all' ? 'Todo o histórico' : `Últimos ${selectedPeriod.value} logs`)
+const hasEnoughLogsForAnalysis = computed(() => (player.value?.recentLogs?.length ?? 0) >= minimumLogsForAnalysis)
 
 const visibleLogs = computed(() => {
   const logs = player.value?.recentLogs ?? []
-  const limit = Math.max(1, Math.min(selectedLogLimit.value, logs.length || 1))
+  const limit = selectedPeriod.value === 'all'
+    ? logs.length
+    : Math.max(1, Math.min(Number(selectedPeriod.value), logs.length || 1))
   return logs.slice(0, limit)
 })
 
@@ -238,7 +268,7 @@ const healingTrendSeries = computed(() => {
 })
 
 const bestLogs = computed(() => {
-  return [...(player.value?.recentLogs ?? [])]
+  return [...visibleLogs.value]
     .sort((left, right) => (right.score ?? 0) - (left.score ?? 0))
     .slice(0, 5)
 })
@@ -303,6 +333,65 @@ const breadcrumbs = computed(() => [
 .skeleton-line--xl { height: 1.8rem; width: 50%; }
 .skeleton-line--md { width: 70%; }
 @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+.analysis-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+.analysis-toolbar h3 {
+  margin: 0;
+  color: var(--text);
+}
+
+.eyebrow {
+  margin: 0 0 0.35rem;
+  color: var(--text-soft);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.period-selector {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  padding: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.period-button {
+  border: 0;
+  background: transparent;
+  color: var(--text-soft);
+  cursor: pointer;
+  border-radius: 999px;
+  padding: 0.45rem 0.7rem;
+  min-width: 3.2rem;
+  font-weight: 700;
+}
+
+.period-button.active {
+  background: linear-gradient(135deg, var(--tf2-red), var(--tf2-orange));
+  color: white;
+  box-shadow: 0 12px 22px rgba(255, 79, 60, 0.2);
+}
+
+.analysis-warning {
+  margin-bottom: var(--space-md);
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  background: rgba(255, 179, 71, 0.08);
+  border: 1px solid rgba(255, 179, 71, 0.25);
+  color: #f7d39a;
+  font-size: 0.88rem;
+}
 
 .content-grid {
   display: grid;
