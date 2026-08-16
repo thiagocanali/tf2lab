@@ -11,6 +11,9 @@
 
     <div v-else-if="hasProfileData">
       <PlayerHeader :player="player" />
+
+      <ExecutiveSummary :overview="filteredOverview" :total-logs="totalRecentLogs" />
+
       <PlayerStatsOverview :overview="filteredOverview" />
 
       <PerformanceInsights :overview="filteredOverview" :total-logs="totalRecentLogs" />
@@ -102,6 +105,7 @@ import PerformanceInsights from '~~/features/player/components/PerformanceInsigh
 import RecommendationsPanel from '~~/features/player/components/RecommendationsPanel.vue'
 import HighlightsPanel from '~~/features/player/components/HighlightsPanel.vue'
 import TrendAnalysisPanel from '~~/features/player/components/TrendAnalysisPanel.vue'
+import ExecutiveSummary from '~~/features/player/components/ExecutiveSummary.vue'
 
 // `useRoute`, `useAsyncData`, `$fetch` are auto-imported by Nuxt.
 
