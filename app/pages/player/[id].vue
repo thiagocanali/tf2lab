@@ -15,6 +15,8 @@
 
       <PerformanceInsights :overview="filteredOverview" :total-logs="totalRecentLogs" />
 
+      <RecommendationsPanel :overview="filteredOverview" :class-stats="filteredClassStats" :total-logs="totalRecentLogs" />
+
       <div class="analysis-toolbar">
         <div>
           <p class="eyebrow">Análise por período</p>
@@ -93,6 +95,7 @@ import DamageBreakdownChart from '~~/features/player/components/DamageBreakdownC
 import ClassPerformanceChart from '~~/features/player/components/ClassPerformanceChart.vue'
 import BestLogsPanel from '~~/features/player/components/BestLogsPanel.vue'
 import PerformanceInsights from '~~/features/player/components/PerformanceInsights.vue'
+import RecommendationsPanel from '~~/features/player/components/RecommendationsPanel.vue'
 
 // `useRoute`, `useAsyncData`, `$fetch` are auto-imported by Nuxt.
 
