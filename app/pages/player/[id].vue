@@ -12,11 +12,49 @@
     <div v-else-if="hasProfileData">
       <PlayerHeader :player="player" />
       <PlayerStatsOverview :overview="filteredOverview" />
+
       <div class="charts-grid">
-        <KDTrendChart :series="kdSeries" />
+        <KDTrendChart :series="kdSeries" title="K/D por partida" series-name="K/D" color="var(--tf2-red)" />
+        <KDTrendChart :series="damageTrendSeries" title="Damage por partida" series-name="Damage" color="#4ade80" />
         <ClassUsageRadar :classes="classUsage" />
-        <DamageBreakdownChart :data="damageBreakdown" />
       </div>
+
+      <div class="charts-grid charts-grid--secondary">
+        <KDTrendChart :series="healingTrendSeries" title="Cura por partida" series-name="Heals" color="#60a5fa" />
+        <ClassPerformanceChart :stats="filteredClassStats" metric="damage" title="Damage por classe" />
+      </div>
+
+      <section class="best-logs-panel">
+        <div class="section-header">
+          <div>
+            <p class="eyebrow">Melhores logs</p>
+            <h3>Partidas mais fortes</h3>
+          </div>
+        </div>
+
+        <div class="best-logs-grid">
+          <article v-for="log in bestLogs" :key="log.id" class="best-log-card">
+            <div class="best-log-card__header">
+              <strong>{{ log.title ?? `Log ${log.id}` }}</strong>
+              <span class="best-log-score">{{ scoreLabel(log) }}</span>
+            </div>
+
+            <div class="best-log-card__meta">
+              <span>{{ log.map ?? 'Mapa desconhecido' }}</span>
+              <span>•</span>
+              <span>{{ formatDate(log.timestamp) }}</span>
+            </div>
+
+            <div class="best-log-card__stats">
+              <span>{{ log.kills ?? 0 }} K</span>
+              <span>{{ log.deaths ?? 0 }} D</span>
+              <span>{{ formatNumber(log.damage ?? 0) }} dmg</span>
+              <span>{{ formatNumber(log.heals ?? 0) }} heals</span>
+            </div>
+          </article>
+        </div>
+      </section>
+
       <div class="content-grid">
         <PlayerLogsList
           :logs="visibleLogs"
@@ -56,6 +94,7 @@ import PlayerClassStats from '~~/features/player/components/PlayerClassStats.vue
 import KDTrendChart from '~~/features/player/components/KDTrendChart.vue'
 import ClassUsageRadar from '~~/features/player/components/ClassUsageRadar.vue'
 import DamageBreakdownChart from '~~/features/player/components/DamageBreakdownChart.vue'
+import ClassPerformanceChart from '~~/features/player/components/ClassPerformanceChart.vue'
 
 // `useRoute`, `useAsyncData`, `$fetch` are auto-imported by Nuxt.
 
@@ -176,9 +215,40 @@ const kdSeries = computed(() => {
   if (!logs.length) return undefined
   return logs.map((l, idx) => ({
     date: l.timestamp ?? `#${idx + 1}`,
-    kd: l.deaths ? (l.kills ?? 0) / l.deaths : (l.kills ?? 0)
+    value: l.kd ?? (l.deaths ? (l.kills ?? 0) / l.deaths : (l.kills ?? 0))
   }))
 })
+
+const damageTrendSeries = computed(() => {
+  const logs = visibleLogs.value
+  if (!logs.length) return undefined
+  return logs.map((l, idx) => ({
+    date: l.timestamp ?? `#${idx + 1}`,
+    value: l.damage ?? 0
+  }))
+})
+
+const healingTrendSeries = computed(() => {
+  const logs = visibleLogs.value
+  if (!logs.length) return undefined
+  return logs.map((l, idx) => ({
+    date: l.timestamp ?? `#${idx + 1}`,
+    value: l.heals ?? 0
+  }))
+})
+
+const bestLogs = computed(() => {
+  return [...(player.value?.recentLogs ?? [])]
+    .sort((left, right) => (right.score ?? 0) - (left.score ?? 0))
+    .slice(0, 5)
+})
+
+const formatDate = (value?: string) => value ? new Date(value).toLocaleDateString() : 'Date unavailable'
+const formatNumber = (value?: number) => new Intl.NumberFormat('en-US').format(value ?? 0)
+const scoreLabel = (log: { score?: number; kills?: number; damage?: number; heals?: number }) => {
+  const score = log.score ?? ((log.kills ?? 0) * 2 + (log.damage ?? 0) / 25 + (log.heals ?? 0) / 18)
+  return `${score.toFixed(1)} pts`
+}
 
 // Real class usage from classStats
 const classUsage = computed(() =>

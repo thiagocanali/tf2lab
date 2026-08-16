@@ -137,15 +137,24 @@ export default defineEventHandler(async (event) => {
         const teams = log.teams ?? {}
         const opponent = player.team === 'Red' ? 'Blue' : 'Red'
         const result = teams[player.team]?.score === undefined ? 'Recorded match' : teams[player.team].score > (teams[opponent]?.score ?? 0) ? 'Victory' : 'Defeat'
+        const kills = player.kills ?? 0
+        const deaths = player.deaths ?? 0
+        const damage = player.dmg ?? 0
+        const heals = player.heals ?? 0
+        const kd = deaths ? kills / deaths : kills
+
         recentLogs.push({
           id: String(log.id),
           title: log.info?.title ?? `Log ${log.id}`,
           map: log.info?.map,
           timestamp: log.info?.date ? new Date(log.info.date * 1000).toISOString() : undefined,
           result,
-          kills: player.kills ?? 0,
-          deaths: player.deaths ?? 0,
-          damage: player.dmg ?? 0
+          kills,
+          deaths,
+          damage,
+          heals,
+          kd,
+          score: kills * 2 + damage / 25 + heals / 18
         })
       }
     }

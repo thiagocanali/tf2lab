@@ -7,6 +7,9 @@ export interface PlayerLogReference {
   kills?: number
   deaths?: number
   damage?: number
+  heals?: number
+  kd?: number
+  score?: number
 }
 
 export interface ClassMetricBreakdown {
