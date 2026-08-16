@@ -119,7 +119,7 @@ const trends = computed<Trend[]>(() => {
   background: rgba(24, 29, 45, 0.95);
   border: 1px solid rgba(255, 79, 60, 0.12);
   border-radius: var(--radius);
-  padding: var(--space-md);
+  padding: var(--space-lg);
 }
 
 .trend-header h3 {
@@ -138,7 +138,7 @@ const trends = computed<Trend[]>(() => {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: var(--space-md);
-  margin-top: var(--space-md);
+  margin-top: var(--space-lg);
 }
 
 .trend-item {
@@ -241,6 +241,10 @@ const trends = computed<Trend[]>(() => {
 @media (max-width: 768px) {
   .trends-grid {
     grid-template-columns: 1fr;
+  }
+
+  .trend-analysis-card {
+    padding: var(--space-md);
   }
 }
 </style>

@@ -12,17 +12,20 @@
     <div v-else-if="hasProfileData">
       <PlayerHeader :player="player" />
 
-      <ExecutiveSummary :overview="filteredOverview" :total-logs="totalRecentLogs" />
+      <section class="profile-section profile-section--primary">
+        <ExecutiveSummary :overview="filteredOverview" :total-logs="totalRecentLogs" />
+        <PlayerStatsOverview :overview="filteredOverview" />
+      </section>
 
-      <PlayerStatsOverview :overview="filteredOverview" />
+      <section class="profile-section profile-section--analysis">
+        <PerformanceInsights :overview="filteredOverview" :total-logs="totalRecentLogs" />
+        <RecommendationsPanel :overview="filteredOverview" :class-stats="filteredClassStats" :total-logs="totalRecentLogs" />
+      </section>
 
-      <PerformanceInsights :overview="filteredOverview" :total-logs="totalRecentLogs" />
-
-      <RecommendationsPanel :overview="filteredOverview" :class-stats="filteredClassStats" :total-logs="totalRecentLogs" />
-
-      <HighlightsPanel :overview="filteredOverview" :class-stats="filteredClassStats" :recent-logs="visibleLogs" />
-
-      <TrendAnalysisPanel :recent-logs="visibleLogs" />
+      <section class="profile-section profile-section--highlights">
+        <HighlightsPanel :overview="filteredOverview" :class-stats="filteredClassStats" :recent-logs="visibleLogs" />
+        <TrendAnalysisPanel :recent-logs="visibleLogs" />
+      </section>
 
       <div class="analysis-toolbar">
         <div>
@@ -301,6 +304,33 @@ const breadcrumbs = computed(() => [
   padding: clamp(1rem, 3vw, 2rem) 0;
 }
 
+.profile-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-lg) 0;
+  border-bottom: 1px solid rgba(255, 79, 60, 0.08);
+}
+
+.profile-section:last-of-type {
+  border-bottom: none;
+}
+
+.profile-section--primary {
+  gap: var(--space-lg);
+  padding-bottom: var(--space-xl);
+}
+
+.profile-section--analysis {
+  gap: var(--space-lg);
+  padding: var(--space-xl) 0;
+}
+
+.profile-section--highlights {
+  gap: var(--space-lg);
+  padding-top: var(--space-xl);
+}
+
 .player-skeleton {
   display: flex;
   flex-direction: column;
@@ -327,7 +357,10 @@ const breadcrumbs = computed(() => [
   justify-content: space-between;
   align-items: center;
   gap: var(--space-md);
-  margin-bottom: var(--space-md);
+  margin: var(--space-lg) 0 var(--space-md);
+  padding: var(--space-md) 0;
+  border-top: 1px solid rgba(255, 79, 60, 0.08);
+  border-bottom: 1px solid rgba(255, 79, 60, 0.08);
 }
 
 .analysis-toolbar h3 {
@@ -433,5 +466,9 @@ const breadcrumbs = computed(() => [
 
 @media (max-width: 960px) {
   .content-grid { grid-template-columns: 1fr; }
+  
+  .profile-section {
+    padding: var(--space-md) 0;
+  }
 }
 </style>

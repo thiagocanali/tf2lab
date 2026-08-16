@@ -213,7 +213,7 @@ const consistencyInsight = computed(() => {
   background: rgba(24, 29, 45, 0.95);
   border: 1px solid rgba(255, 79, 60, 0.12);
   border-radius: var(--radius);
-  padding: var(--space-md);
+  padding: var(--space-lg);
 }
 
 .insights-header h3 {
@@ -232,8 +232,8 @@ const consistencyInsight = computed(() => {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: var(--space-md);
-  margin-bottom: var(--space-md);
-  padding-bottom: var(--space-md);
+  margin: var(--space-lg) 0;
+  padding-bottom: var(--space-lg);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
@@ -244,6 +244,12 @@ const consistencyInsight = computed(() => {
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: all 0.2s ease;
+}
+
+.insight-item:hover {
+  border-color: rgba(255, 79, 60, 0.2);
+  background: rgba(255, 79, 60, 0.06);
 }
 
 .insight-icon {
@@ -305,28 +311,25 @@ const consistencyInsight = computed(() => {
   align-items: center;
   gap: 0.6rem;
   padding: 0.75rem 1rem;
-  border-radius: 10px;
+  border-radius: 8px;
   background: rgba(255, 179, 71, 0.08);
-  border: 1px solid rgba(255, 179, 71, 0.22);
-  color: var(--text-soft);
+  border: 1px solid rgba(255, 179, 71, 0.2);
+  color: #f7d39a;
   font-size: 0.82rem;
   margin-bottom: var(--space-md);
+  line-height: 1.4;
 }
 
 .warning-icon {
-  font-size: 1.1rem;
   flex-shrink: 0;
-}
-
-.insights-warning strong {
-  color: var(--text);
+  font-size: 1.1rem;
 }
 
 .insights-legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 1.2rem;
-  justify-content: center;
+  gap: 1rem;
+  padding-top: var(--space-md);
 }
 
 .legend-item {
@@ -334,19 +337,29 @@ const consistencyInsight = computed(() => {
   align-items: center;
   gap: 0.5rem;
   color: var(--text-soft);
-  font-size: 0.78rem;
+  font-size: 0.75rem;
 }
 
 .legend-dot {
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 999px;
-  display: inline-block;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
+
+.badge--excellent { background-color: #86efac; }
+.badge--good { background-color: #93c5fd; }
+.badge--average { background-color: #fbbf24; }
+.badge--developing { background-color: #fca5a5; }
 
 @media (max-width: 768px) {
   .insights-grid {
     grid-template-columns: 1fr;
+    gap: var(--space-sm);
+  }
+
+  .insights-card {
+    padding: var(--space-md);
   }
 }
 </style>

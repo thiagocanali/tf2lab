@@ -123,7 +123,7 @@ const highlights = computed<Highlight[]>(() => {
   background: rgba(24, 29, 45, 0.95);
   border: 1px solid rgba(255, 79, 60, 0.12);
   border-radius: var(--radius);
-  padding: var(--space-md);
+  padding: var(--space-lg);
 }
 
 .highlights-header h3 {
@@ -141,8 +141,8 @@ const highlights = computed<Highlight[]>(() => {
 .highlights-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--space-sm);
-  margin-top: var(--space-md);
+  gap: var(--space-md);
+  margin-top: var(--space-lg);
 }
 
 .highlight-item {
@@ -198,6 +198,10 @@ const highlights = computed<Highlight[]>(() => {
 @media (max-width: 768px) {
   .highlights-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .highlights-card {
+    padding: var(--space-md);
   }
 }
 

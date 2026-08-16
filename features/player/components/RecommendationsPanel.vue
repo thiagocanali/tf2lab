@@ -152,7 +152,7 @@ const recommendations = computed<Recommendation[]>(() => {
   background: rgba(24, 29, 45, 0.95);
   border: 1px solid rgba(255, 79, 60, 0.12);
   border-radius: var(--radius);
-  padding: var(--space-md);
+  padding: var(--space-lg);
 }
 
 .recommendations-header h3 {
@@ -170,9 +170,9 @@ const recommendations = computed<Recommendation[]>(() => {
 .recommendations-list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
-  margin-bottom: var(--space-md);
-  padding-bottom: var(--space-md);
+  gap: var(--space-md);
+  margin: var(--space-lg) 0;
+  padding-bottom: var(--space-lg);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
@@ -196,14 +196,29 @@ const recommendations = computed<Recommendation[]>(() => {
   background: rgba(239, 68, 68, 0.08);
 }
 
+.recommendation-item.priority--high:hover {
+  border-color: rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.12);
+}
+
 .recommendation-item.priority--medium {
   border-color: rgba(251, 191, 36, 0.25);
   background: rgba(251, 191, 36, 0.08);
 }
 
+.recommendation-item.priority--medium:hover {
+  border-color: rgba(251, 191, 36, 0.35);
+  background: rgba(251, 191, 36, 0.12);
+}
+
 .recommendation-item.priority--low {
   border-color: rgba(34, 197, 94, 0.15);
   background: rgba(34, 197, 94, 0.05);
+}
+
+.recommendation-item.priority--low:hover {
+  border-color: rgba(34, 197, 94, 0.25);
+  background: rgba(34, 197, 94, 0.08);
 }
 
 .rec-icon {
@@ -254,7 +269,7 @@ const recommendations = computed<Recommendation[]>(() => {
 }
 
 .recommendations-footer {
-  padding: 0.65rem;
+  padding: 0.75rem;
   border-radius: 8px;
   background: rgba(255, 179, 71, 0.06);
   border: 1px solid rgba(255, 179, 71, 0.15);
@@ -279,6 +294,10 @@ const recommendations = computed<Recommendation[]>(() => {
 
   .rec-icon {
     font-size: 1.4rem;
+  }
+
+  .recommendations-card {
+    padding: var(--space-md);
   }
 }
 </style>

@@ -94,7 +94,13 @@ const secondaryMetrics = computed(() => [
 .stats-section {
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
+  gap: var(--space-md);
+  padding: var(--space-md) 0;
+  border-bottom: 1px solid rgba(255, 79, 60, 0.08);
+}
+
+.stats-section:last-child {
+  border-bottom: none;
 }
 
 .section-header {

@@ -91,7 +91,7 @@ const scoreLabel = (log: { score?: number; kills?: number; damage?: number; heal
   background: rgba(24, 29, 45, 0.95);
   border: 1px solid rgba(255, 79, 60, 0.12);
   border-radius: var(--radius);
-  padding: var(--space-md);
+  padding: var(--space-lg);
 }
 
 .panel-header {
@@ -339,6 +339,10 @@ const scoreLabel = (log: { score?: number; kills?: number; damage?: number; heal
   .panel-header {
     flex-direction: column;
     gap: var(--space-sm);
+  }
+
+  .best-logs-card {
+    padding: var(--space-md);
   }
 }
 </style>
