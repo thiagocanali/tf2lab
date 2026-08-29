@@ -5,6 +5,7 @@ const ANALYZED_LOG_LIMIT = 10
 const MAX_PLAYER_LOG_LIMIT = 200
 const MAX_PLAYER_LOGS_TO_KEEP = 200
 const LOGS_TF_MAX_PAGE_SIZE = 100
+const DETAIL_FETCH_BATCH = 50
 
 async function fetchPlayerLogSummaries(logsTfUrl: string, playerId: string, requestedLimit: number) {
   const targetLimit = Math.max(1, requestedLimit || ANALYZED_LOG_LIMIT)
@@ -89,9 +90,14 @@ export default defineEventHandler(async (event) => {
   try {
     const { logs: summaries, total: rawTotalLogs } = await fetchPlayerLogSummaries(logsTfUrl, id, safeLimit)
     const totalLogs = Number.isFinite(rawTotalLogs) ? rawTotalLogs : summaries.length
-    const details = await Promise.all(summaries.slice(0, safeLimit).map(async (summary: any) => {
-      try { return { ...(await $fetch(`${logsTfUrl}/${summary.id}`, { method: 'GET' })), id: summary.id } } catch { return null }
-    }))
+    
+    // Fetch details for more logs than needed to compensate for failures/missing player
+    const fetchLimit = Math.min(safeLimit + DETAIL_FETCH_BATCH, MAX_PLAYER_LOGS_TO_KEEP, summaries.length)
+    const details = await Promise.all(
+      summaries.slice(0, fetchLimit).map(async (summary: any) => {
+        try { return { ...(await $fetch(`${logsTfUrl}/${summary.id}`, { method: 'GET' })), id: summary.id } } catch { return null }
+      })
+    )
 
     const steam3Id = toSteam3Id(id)
     const classMap = new Map<string, any>()
@@ -133,7 +139,7 @@ export default defineEventHandler(async (event) => {
         classMap.set(stat.type, current)
       }
 
-      if (recentLogs.length < MAX_PLAYER_LOGS_TO_KEEP) {
+      if (recentLogs.length < safeLimit) {
         const teams = log.teams ?? {}
         const opponent = player.team === 'Red' ? 'Blue' : 'Red'
         const result = teams[player.team]?.score === undefined ? 'Recorded match' : teams[player.team].score > (teams[opponent]?.score ?? 0) ? 'Victory' : 'Defeat'

@@ -31,7 +31,7 @@
 
     <div class="summary-row">
       <span>{{ logs.length }} / {{ totalLogs }} logs</span>
-      <span v-if="returnedFewerThanRequested" class="meta warning">A API retornou menos do que pediu.</span>
+      <span v-if="showApiWarning" class="meta warning">A API retornou menos do que pediu.</span>
       <span v-else class="meta">Limite atual: {{ limit }}</span>
     </div>
 
@@ -54,13 +54,27 @@
 import { computed } from 'vue'
 import type { PlayerLogReference } from '~~/features/player/types'
 
-const props = defineProps<{ logs: PlayerLogReference[]; limit?: number; totalLogs?: number; requestedLimit?: number }>()
+const props = defineProps<{ 
+  logs: PlayerLogReference[] 
+  limit?: number 
+  totalLogs?: number 
+  requestedLimit?: number
+  apiLogCount?: number  // Total logs returned by API (before period filtering)
+}>()
 const emit = defineEmits<{ 'update:limit': [value: number] }>()
 
 const limit = computed(() => Math.max(1, props.limit ?? 10))
 const totalLogs = computed(() => Math.max(0, Number(props.totalLogs ?? props.logs.length ?? 0)))
 const requestedLimit = computed(() => Math.max(1, Number(props.requestedLimit ?? props.limit ?? limit.value)))
-const returnedFewerThanRequested = computed(() => props.logs.length < requestedLimit.value && totalLogs.value > 0)
+const apiLogCount = computed(() => Math.max(0, Number(props.apiLogCount ?? props.logs.length ?? 0)))
+
+// Only warn if API returned fewer logs than requested (not due to period filtering)
+const showApiWarning = computed(() => 
+  apiLogCount.value > 0 && 
+  apiLogCount.value < requestedLimit.value && 
+  totalLogs.value >= requestedLimit.value
+)
+
 const limitOptions = [5, 10, 20, 30, 50, 100]
 
 const handleCustomLimit = (value: string) => {
@@ -136,7 +150,7 @@ const number = (value?: number) => new Intl.NumberFormat('en-US').format(value ?
   border-radius: 999px;
   padding: 0.45rem 0.65rem;
   font: inherit;
-  text-align: center;
+  text-align: center.
 }
 
 .limit-button.active {
@@ -206,19 +220,19 @@ const number = (value?: number) => new Intl.NumberFormat('en-US').format(value ?
 .log-link {
   color: var(--accent);
   font-weight: 700;
-  white-space: nowrap;
+  white-space: nowrap.
 }
 
 @media (max-width: 640px) {
   .header-row,
   .log-items li {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: flex-start.
   }
 
   .limit-selector {
     width: 100%;
-    justify-content: space-between;
+    justify-content: space-between.
   }
 }
 </style>
