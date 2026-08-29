@@ -49,7 +49,51 @@
       </aside>
     </section>
 
-    <section class="proof" aria-label="TF2Lab features">
+    <section class="features" aria-labelledby="features-title">
+      <header class="features-header">
+        <h2 id="features-title">What TF2Lab does</h2>
+        <p>Three pillars built for competitive players</p>
+      </header>
+
+      <div class="features-grid">
+        <article class="feature-card" :class="{ 'feature-card--analytics': true }">
+          <div class="feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 3v18h18" />
+              <path d="m19 9-5 5-4-4-3 3" />
+            </svg>
+          </div>
+          <h3>Analytics</h3>
+          <p>Deep dive into your logs — K/D trends, damage breakdowns, class usage radars, and performance benchmarks across maps and seasons.</p>
+          <NuxtLink to="/search" class="feature-cta">View analytics →</NuxtLink>
+        </article>
+
+        <article class="feature-card" :class="{ 'feature-card--competition': true }">
+          <div class="feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+          </div>
+          <h3>Competition</h3>
+          <p>Track official matches, scrims, and tournaments. Scout opponents, manage team lineups, and prepare with data-driven insights.</p>
+          <NuxtLink to="/search" class="feature-cta">Explore matches →</NuxtLink>
+        </article>
+
+        <article class="feature-card" :class="{ 'feature-card--academy': true }">
+          <div class="feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+              <path d="M6 12v5c3 3 9 3 12 0v-5" />
+            </svg>
+          </div>
+          <h3>Academy</h3>
+          <p>Learn competitive TF2 from scratch — guides on configs, HUDs, whitelists, map callouts, and progression from PUGs to leagues.</p>
+          <NuxtLink to="/search" class="feature-cta">Start learning →</NuxtLink>
+        </article>
+      </div>
+    </section>
+
+    <section class="proof" aria-label="TF2Lab benefits">
       <article>
         <span class="proof-icon">↗</span>
         <div><strong>Find your edge</strong><p>See what wins more rounds.</p></div>
@@ -92,7 +136,48 @@ h1 { margin: 0; max-width: 10ch; font-size: clamp(3.1rem, 6.5vw, 6.3rem); letter
 .hero-description { max-width: 35rem; margin: 1.8rem 0 0; color: var(--text-soft); font-size: clamp(1rem, 1.5vw, 1.2rem); line-height: 1.7; }
 .hero-search { display: flex; align-items: center; gap: .75rem; width: 100%; margin-top: 2.4rem; padding: .55rem .55rem .55rem 1.1rem; border: 1px solid rgba(255,255,255,.14); border-radius: 1.1rem; background: rgba(7, 8, 13, .68); box-shadow: 0 16px 50px rgba(0,0,0,.24); }.search-icon { color: var(--accent-soft); font-size: 1.85rem; line-height: 1; transform: rotate(-18deg); }.hero-search input { min-width: 0; flex: 1; border: 0; outline: 0; background: transparent; color: var(--text); font-size: 1rem; }.hero-search input::placeholder { color: var(--text-muted); }.hero-search button { border: 0; border-radius: .78rem; padding: .95rem 1.2rem; background: var(--accent); color: #160807; font-weight: 800; cursor: pointer; transition: transform .2s ease, background .2s ease; }.hero-search button:hover:not(:disabled) { background: #ff765d; transform: translateY(-1px); }.hero-search button:disabled { cursor: not-allowed; opacity: .45; }.search-hint { margin: .8rem 0 0 1.1rem; color: var(--text-muted); font-size: .84rem; }
 .hero-panel { width: min(100%, 25rem); justify-self: end; padding: 1.45rem; border: 1px solid rgba(255,255,255,.12); border-radius: 1.25rem; background: linear-gradient(150deg, rgba(33, 40, 59, .88), rgba(11, 13, 21, .9)); box-shadow: 0 30px 70px rgba(0,0,0,.32); transform: rotate(3deg); }.panel-topline, .panel-footer { display: flex; align-items: center; gap: .5rem; color: var(--text-soft); font-size: .78rem; font-weight: 650; }.panel-period { margin-left: auto; color: var(--text-muted); font-weight: 500; }.live-dot { width: .45rem; height: .45rem; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 .25rem rgba(75,211,127,.12); }.metric-row { display: flex; align-items: end; justify-content: space-between; margin: 2rem 0 1.3rem; }.metric-label { display: block; margin-bottom: .4rem; color: var(--text-muted); font-size: .8rem; }.metric-row strong { font-size: 2.5rem; letter-spacing: -.07em; }.metric-row strong span { color: var(--text-muted); font-size: 1rem; letter-spacing: 0; }.score-badge { padding: .38rem .55rem; border-radius: .5rem; background: rgba(75,211,127,.13); color: var(--success); font-size: .8rem; font-weight: 800; }.chart { height: 9rem; display: flex; align-items: end; gap: .45rem; padding: .9rem .2rem; border-bottom: 1px solid var(--border); background: linear-gradient(to top, rgba(58,128,255,.08), transparent); }.chart span { flex: 1; min-width: .3rem; border-radius: .3rem .3rem 0 0; background: linear-gradient(to top, var(--tf2-blu), #89b9ff); }.panel-footer { justify-content: space-between; padding-top: 1rem; }.panel-footer strong { color: var(--text); }
-.proof { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin-top: 1px; overflow: hidden; border: 1px solid var(--border); border-radius: 0 0 1.25rem 1.25rem; background: var(--border); }.proof article { display: flex; gap: .9rem; align-items: center; padding: 1.4rem 1.5rem; background: rgba(17, 20, 31, .84); }.proof-icon { display: grid; width: 2.3rem; height: 2.3rem; flex: 0 0 auto; place-items: center; border-radius: .7rem; background: rgba(255,79,60,.12); color: var(--accent-soft); font-size: 1.25rem; }.proof strong { font-size: .92rem; }.proof p { margin: .25rem 0 0; color: var(--text-muted); font-size: .8rem; }.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
-@media (max-width: 840px) { .hero { grid-template-columns: 1fr; padding: 3rem 1.5rem; }.hero-panel { justify-self: start; transform: none; }.proof { grid-template-columns: 1fr; border-radius: 0 0 1rem 1rem; } }
-@media (max-width: 520px) { .hero { min-height: auto; }.hero-search { flex-wrap: wrap; padding: .7rem; }.hero-search input { min-height: 2.8rem; }.hero-search button { width: 100%; }.search-icon { margin-left: .35rem; }.content-area { padding: 1rem; } }
+
+.features { margin-top: clamp(3rem, 6vw, 5rem); }
+.features-header { text-align: center; max-width: 40rem; margin: 0 auto clamp(2rem, 4vw, 3rem); }
+.features-header h2 { margin: 0 0 .5rem; font-size: clamp(1.8rem, 3.5vw, 2.5rem); letter-spacing: -.03em; font-weight: 800; }
+.features-header p { margin: 0; color: var(--text-soft); font-size: clamp(1rem, 1.3vw, 1.1rem); }
+.features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(1rem, 2vw, 1.5rem); }
+.feature-card { position: relative; padding: clamp(1.5rem, 2.5vw, 2rem); border: 1px solid var(--border); border-radius: 1.25rem; background: linear-gradient(160deg, rgba(255,255,255,.03), transparent 60%), var(--surface); transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease; }
+.feature-card:hover { border-color: var(--border-strong); transform: translateY(-4px); box-shadow: var(--shadow-strong); }
+.feature-card::before { content: ''; position: absolute; inset: 0; border-radius: 1.25rem; opacity: 0; transition: opacity .3s ease; pointer-events: none; }
+.feature-card--analytics::before { background: linear-gradient(135deg, rgba(255, 59, 48, 0.12), transparent); }
+.feature-card--competition::before { background: linear-gradient(135deg, rgba(58, 128, 255, 0.12), transparent); }
+.feature-card--academy::before { background: linear-gradient(135deg, rgba(255, 155, 51, 0.12), transparent); }
+.feature-card:hover::before { opacity: 1; }
+.feature-icon { display: grid; place-items: center; width: 3rem; height: 3rem; border-radius: .85rem; margin-bottom: 1rem; }
+.feature-card--analytics .feature-icon { background: rgba(255, 59, 48, 0.15); color: var(--tf2-red); }
+.feature-card--competition .feature-icon { background: rgba(58, 128, 255, 0.15); color: var(--tf2-blu); }
+.feature-card--academy .feature-icon { background: rgba(255, 155, 51, 0.15); color: var(--tf2-orange); }
+.feature-icon svg { width: 1.5rem; height: 1.5rem; }
+.feature-card h3 { margin: 0 0 .5rem; font-size: 1.15rem; font-weight: 700; letter-spacing: -.01em; }
+.feature-card p { margin: 0 0 1.25rem; color: var(--text-soft); font-size: .9rem; line-height: 1.6; }
+.feature-cta { display: inline-flex; align-items: center; gap: .35rem; color: var(--accent); font-weight: 700; font-size: .85rem; text-decoration: none; transition: gap .2s ease; }
+.feature-cta:hover { gap: .6rem; }
+
+.proof { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin-top: clamp(3rem, 5vw, 4rem); overflow: hidden; border: 1px solid var(--border); border-radius: 0 0 1.25rem 1.25rem; background: var(--border); }
+.proof article { display: flex; gap: .9rem; align-items: center; padding: 1.4rem 1.5rem; background: rgba(17, 20, 31, .84); }
+.proof-icon { display: grid; width: 2.3rem; height: 2.3rem; flex: 0 0 auto; place-items: center; border-radius: .7rem; background: rgba(255,79,60,.12); color: var(--accent-soft); font-size: 1.25rem; }
+.proof strong { font-size: .92rem; }
+.proof p { margin: .25rem 0 0; color: var(--text-muted); font-size: .8rem; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+@media (max-width: 840px) {
+  .hero { grid-template-columns: 1fr; padding: 3rem 1.5rem; }
+  .hero-panel { justify-self: start; transform: none; }
+  .features-grid { grid-template-columns: 1fr; }
+  .proof { grid-template-columns: 1fr; border-radius: 0 0 1rem 1rem; }
+}
+@media (max-width: 520px) {
+  .hero { min-height: auto; }
+  .hero-search { flex-wrap: wrap; padding: .7rem; }
+  .hero-search input { min-height: 2.8rem; }
+  .hero-search button { width: 100%; }
+  .search-icon { margin-left: .35rem; }
+  .content-area { padding: 1rem; }
+}
 </style>
