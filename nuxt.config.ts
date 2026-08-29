@@ -9,5 +9,12 @@ export default defineNuxtConfig({
     resolve(__dirname, 'assets/styles/base.css'),
     resolve(__dirname, 'assets/styles/utilities.css'),
     resolve(__dirname, 'assets/styles/animations.css')
-  ]
+  ],
+
+  runtimeConfig: {
+    steamApiKey: process.env.STEAM_API_KEY,
+    public: {
+      logsTfUrl: process.env.LOGS_TF_URL || 'https://logs.tf/api/v1/log'
+    }
+  }
 })

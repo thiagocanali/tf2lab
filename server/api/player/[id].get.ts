@@ -32,6 +32,23 @@ async function fetchPlayerLogSummaries(logsTfUrl: string, playerId: string, requ
   }
 }
 
+async function fetchSteamAvatar(steamId: string, apiKey: string | undefined): Promise<string> {
+  if (!apiKey) return ''
+  try {
+    const response = await $fetch('https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/', {
+      method: 'GET',
+      query: {
+        key: apiKey,
+        steamids: steamId
+      }
+    })
+    const players = response?.response?.players ?? []
+    return players[0]?.avatarfull ?? ''
+  } catch {
+    return ''
+  }
+}
+
 function toSteam3Id(steamId: string): string {
   let borrow = 0
   const digits = new Array(steamId.length)
@@ -85,7 +102,9 @@ export default defineEventHandler(async (event) => {
     ? Math.min(Math.max(1, requestedLimit), MAX_PLAYER_LOG_LIMIT)
     : ANALYZED_LOG_LIMIT
 
-  const logsTfUrl = useRuntimeConfig()?.public?.logsTfUrl ?? 'https://logs.tf/api/v1/log'
+  const config = useRuntimeConfig()
+  const logsTfUrl = config.public?.logsTfUrl ?? 'https://logs.tf/api/v1/log'
+  const steamApiKey = config.steamApiKey
 
   try {
     const { logs: summaries, total: rawTotalLogs } = await fetchPlayerLogSummaries(logsTfUrl, id, safeLimit)
@@ -98,6 +117,9 @@ export default defineEventHandler(async (event) => {
         try { return { ...(await $fetch(`${logsTfUrl}/${summary.id}`, { method: 'GET' })), id: summary.id } } catch { return null }
       })
     )
+
+    // Fetch Steam avatar in parallel
+    const avatarUrl = await fetchSteamAvatar(id, steamApiKey)
 
     const steam3Id = toSteam3Id(id)
     const classMap = new Map<string, any>()
@@ -216,7 +238,7 @@ export default defineEventHandler(async (event) => {
         id,
         name,
         steamId: id,
-        avatarUrl: '',
+        avatarUrl,
         totalLogs: totalLogs,
         overview: {
           totalKills,
