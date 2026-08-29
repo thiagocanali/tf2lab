@@ -13,18 +13,24 @@
       <PlayerHeader :player="player" />
 
       <section class="profile-section profile-section--primary">
-        <ExecutiveSummary :overview="filteredOverview" :total-logs="totalRecentLogs" />
-        <PlayerStatsOverview :overview="filteredOverview" />
+        <div class="section-grid section-grid--two">
+          <ExecutiveSummary :overview="filteredOverview" :total-logs="totalRecentLogs" />
+          <PlayerStatsOverview :overview="filteredOverview" />
+        </div>
       </section>
 
       <section class="profile-section profile-section--analysis">
-        <PerformanceInsights :overview="filteredOverview" :total-logs="totalRecentLogs" />
-        <RecommendationsPanel :overview="filteredOverview" :class-stats="filteredClassStats" :total-logs="totalRecentLogs" />
+        <div class="section-grid section-grid--two">
+          <PerformanceInsights :overview="filteredOverview" :total-logs="totalRecentLogs" />
+          <RecommendationsPanel :overview="filteredOverview" :class-stats="filteredClassStats" :total-logs="totalRecentLogs" />
+        </div>
       </section>
 
       <section class="profile-section profile-section--highlights">
-        <HighlightsPanel :overview="filteredOverview" :class-stats="filteredClassStats" :recent-logs="visibleLogs" />
-        <TrendAnalysisPanel :recent-logs="visibleLogs" />
+        <div class="section-grid section-grid--two">
+          <HighlightsPanel :overview="filteredOverview" :class-stats="filteredClassStats" :recent-logs="visibleLogs" />
+          <TrendAnalysisPanel :recent-logs="visibleLogs" />
+        </div>
       </section>
 
       <div class="analysis-toolbar">
@@ -50,29 +56,37 @@
         A análise de evolução precisa de pelo menos {{ minimumLogsForAnalysis }} logs para ser confiável.
       </div>
 
-      <div class="charts-grid">
-        <KDTrendChart :series="kdSeries" title="K/D por partida" series-name="K/D" color="var(--tf2-red)" />
-        <KDTrendChart :series="damageTrendSeries" title="Damage por partida" series-name="Damage" color="#4ade80" />
-        <ClassUsageRadar :classes="classUsage" />
-      </div>
+      <section class="profile-section profile-section--charts">
+        <div class="charts-grid">
+          <KDTrendChart :series="kdSeries" title="K/D por partida" series-name="K/D" color="var(--tf2-red)" />
+          <KDTrendChart :series="damageTrendSeries" title="Damage por partida" series-name="Damage" color="#4ade80" />
+          <ClassUsageRadar :classes="classUsage" />
+        </div>
+      </section>
 
-      <div class="charts-grid charts-grid--secondary">
-        <KDTrendChart :series="healingTrendSeries" title="Cura por partida" series-name="Heals" color="#60a5fa" />
-        <ClassPerformanceChart :stats="filteredClassStats" metric="damage" title="Damage por classe" />
-      </div>
+      <section class="profile-section profile-section--charts">
+        <div class="charts-grid charts-grid--secondary">
+          <KDTrendChart :series="healingTrendSeries" title="Cura por partida" series-name="Heals" color="#60a5fa" />
+          <ClassPerformanceChart :stats="filteredClassStats" metric="damage" title="Damage por classe" />
+        </div>
+      </section>
 
-      <BestLogsPanel :logs="bestLogs" :total-logs-analyzed="totalRecentLogs" />
+      <section class="profile-section profile-section--best-logs">
+        <BestLogsPanel :logs="bestLogs" :total-logs-analyzed="totalRecentLogs" />
+      </section>
 
-      <div class="content-grid">
-        <PlayerLogsList
-          :logs="visibleLogs"
-          :limit="selectedLogLimit"
-          :total-logs="player?.totalLogs ?? totalRecentLogs"
-          :requested-limit="selectedLogLimit"
-          @update:limit="selectedLogLimit = $event"
-        />
-        <PlayerClassStats :classes="filteredClassStats" />
-      </div>
+      <section class="profile-section profile-section--logs-stats">
+        <div class="content-grid">
+          <PlayerLogsList
+            :logs="visibleLogs"
+            :limit="selectedLogLimit"
+            :total-logs="player?.totalLogs ?? totalRecentLogs"
+            :requested-limit="selectedLogLimit"
+            @update:limit="selectedLogLimit = $event"
+          />
+          <PlayerClassStats :classes="filteredClassStats" />
+        </div>
+      </section>
     </div>
 
     <section v-else class="empty-state" role="alert">
@@ -300,7 +314,7 @@ const breadcrumbs = computed(() => [
 .page-player {
   display: flex;
   flex-direction: column;
-  gap: var(--space-lg);
+  gap: 0;
   padding: clamp(1rem, 3vw, 2rem) 0;
 }
 
@@ -308,8 +322,8 @@ const breadcrumbs = computed(() => [
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
-  padding: var(--space-lg) 0;
-  border-bottom: 1px solid rgba(255, 79, 60, 0.08);
+  padding: var(--space-md) 0;
+  border-bottom: 1px solid rgba(255, 79, 60, 0.06);
 }
 
 .profile-section:last-of-type {
@@ -317,18 +331,36 @@ const breadcrumbs = computed(() => [
 }
 
 .profile-section--primary {
-  gap: var(--space-lg);
-  padding-bottom: var(--space-xl);
+  gap: var(--space-md);
 }
 
-.profile-section--analysis {
-  gap: var(--space-lg);
-  padding: var(--space-xl) 0;
-}
-
+.profile-section--analysis,
 .profile-section--highlights {
-  gap: var(--space-lg);
-  padding-top: var(--space-xl);
+  gap: var(--space-md);
+}
+
+.profile-section--charts {
+  gap: var(--space-md);
+  padding: var(--space-md) 0;
+}
+
+.profile-section--best-logs,
+.profile-section--logs-stats {
+  gap: 0;
+  padding: var(--space-md) 0;
+}
+
+.section-grid {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.section-grid--two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.section-grid--two > * {
+  min-height: 100%;
 }
 
 .player-skeleton {
@@ -357,10 +389,10 @@ const breadcrumbs = computed(() => [
   justify-content: space-between;
   align-items: center;
   gap: var(--space-md);
-  margin: var(--space-lg) 0 var(--space-md);
-  padding: var(--space-md) 0;
-  border-top: 1px solid rgba(255, 79, 60, 0.08);
-  border-bottom: 1px solid rgba(255, 79, 60, 0.08);
+  margin: var(--space-md) 0;
+  padding: var(--space-sm) 0;
+  border-top: 1px solid rgba(255, 79, 60, 0.06);
+  border-bottom: 1px solid rgba(255, 79, 60, 0.06);
 }
 
 .analysis-toolbar h3 {
@@ -405,8 +437,8 @@ const breadcrumbs = computed(() => [
 }
 
 .analysis-warning {
-  margin-bottom: var(--space-md);
-  padding: 0.85rem 1rem;
+  margin: 0 0 var(--space-md);
+  padding: 0.75rem 1rem;
   border-radius: 12px;
   background: rgba(255, 179, 71, 0.08);
   border: 1px solid rgba(255, 179, 71, 0.25);
@@ -414,16 +446,26 @@ const breadcrumbs = computed(() => [
   font-size: 0.88rem;
 }
 
-.content-grid {
-  display: grid;
-  grid-template-columns: 1.5fr 1fr;
-  gap: var(--space-lg);
-}
 .charts-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-lg);
-  margin: var(--space-lg) 0;
+  gap: var(--space-md);
+}
+
+.charts-grid--secondary {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: var(--space-md);
+  align-items: stretch;
+}
+
+.content-grid > * {
+  height: 100%;
+  min-height: 400px;
 }
 
 .empty-state {
@@ -465,10 +507,25 @@ const breadcrumbs = computed(() => [
 .action-link:hover { background: rgba(255, 79, 60, 0.16); border-color: rgba(255, 79, 60, 0.32); }
 
 @media (max-width: 960px) {
-  .content-grid { grid-template-columns: 1fr; }
-  
+  .section-grid--two {
+    grid-template-columns: 1fr;
+  }
+
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .content-grid > * {
+    min-height: auto;
+  }
+
+  .charts-grid,
+  .charts-grid--secondary {
+    grid-template-columns: 1fr;
+  }
+
   .profile-section {
-    padding: var(--space-md) 0;
+    padding: var(--space-sm) 0;
   }
 }
 </style>
