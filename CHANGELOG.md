@@ -6,6 +6,9 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Changed
+- **K/D trend chart**: TF2-themed card (red/orange), readable dark tooltips, reactive series from real logs, chronological axis, empty state when there is no data
+
 ### Added
 - **Página de busca melhorada (`/search`)**:
   - Detecção automática de tipo de query: SteamID64, player name, log ID
