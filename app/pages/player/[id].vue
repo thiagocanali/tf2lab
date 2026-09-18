@@ -9,7 +9,7 @@
       <div class="skeleton-line skeleton-line--md" />
     </div>
 
-    <div v-else-if="hasProfileData">
+    <div v-else-if="hasProfileData" class="profile-content">
       <PlayerHeader :player="player" />
 
       <section class="profile-section profile-section--primary">
@@ -322,18 +322,33 @@ const breadcrumbs = computed(() => [
 <style scoped>
 .page-player {
   --profile-gap: 0.9rem;
+  --profile-section-gap: 1.35rem;
+  --profile-card-gap: 1rem;
+  --profile-card-radius: 12px;
+  --profile-card-border: rgba(255, 255, 255, 0.1);
+  --profile-card-background: linear-gradient(145deg, rgba(27, 32, 48, 0.96), rgba(15, 18, 28, 0.96));
+  --profile-card-shadow: 0 14px 36px rgba(0, 0, 0, 0.2);
   display: flex;
   flex-direction: column;
-  gap: var(--profile-gap);
+  gap: 0.65rem;
+  width: 100%;
   padding: clamp(0.75rem, 2vw, 1.5rem) 0;
+}
+
+.profile-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--profile-section-gap);
+  width: min(100%, 1160px);
+  margin: 0 auto;
 }
 
 .profile-section {
   display: flex;
   flex-direction: column;
-  gap: var(--profile-gap);
-  padding: 0.9rem 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  gap: var(--profile-card-gap);
+  padding: var(--profile-section-gap) 0 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .profile-section:first-of-type {
@@ -341,20 +356,20 @@ const breadcrumbs = computed(() => [
 }
 
 .profile-section--primary {
-  gap: var(--profile-gap);
+  gap: var(--profile-card-gap);
   padding-top: 0;
 }
 
 .profile-section--controls {
   gap: 0.65rem;
-  padding: 0.75rem 0;
+  padding-top: 0.35rem;
   border-top-color: rgba(255, 155, 51, 0.35);
 }
 
 .profile-section--charts {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--profile-gap);
+  gap: var(--profile-card-gap);
   align-items: stretch;
 }
 
@@ -364,7 +379,7 @@ const breadcrumbs = computed(() => [
 
 .section-grid {
   display: grid;
-  gap: var(--profile-gap);
+  gap: var(--profile-card-gap);
 }
 
 .section-grid--two {
@@ -462,7 +477,7 @@ const breadcrumbs = computed(() => [
 .content-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.5fr) minmax(18rem, 1fr);
-  gap: var(--profile-gap);
+  gap: var(--profile-card-gap);
 }
 
 :deep(.chart-card),
@@ -473,16 +488,26 @@ const breadcrumbs = computed(() => [
 :deep(.best-logs-card),
 :deep(.logs-list-card),
 :deep(.class-stats-card) {
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.18);
+  border: 1px solid var(--profile-card-border);
+  border-radius: var(--profile-card-radius);
+  background: var(--profile-card-background);
+  box-shadow: var(--profile-card-shadow);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 :deep(.chart-card:hover),
+:deep(.insights-card:hover),
+:deep(.recommendations-card:hover),
+:deep(.highlights-card:hover),
+:deep(.trend-analysis-card:hover),
+:deep(.best-logs-card:hover),
+:deep(.logs-list-card:hover),
+:deep(.class-stats-card:hover),
 :deep(.best-log-card:hover),
 :deep(.class-card:hover),
 :deep(.log-items li:hover) {
   border-color: rgba(255, 155, 51, 0.48);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.26);
 }
 
 :deep(.insights-card),
@@ -520,8 +545,8 @@ const breadcrumbs = computed(() => [
 
 :deep(.chart-card__canvas),
 :deep(.chart-card__empty) {
-  height: 240px;
-  min-height: 240px;
+  height: 250px;
+  min-height: 250px;
 }
 
 .empty-state {
@@ -577,7 +602,7 @@ const breadcrumbs = computed(() => [
     grid-template-columns: 1fr;
   }
   .profile-section {
-    padding: 0.75rem 0;
+    padding-top: 1rem;
   }
 
   .section-heading {
