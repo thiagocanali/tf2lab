@@ -55,6 +55,30 @@ async function fetchSteamAvatar(steamId: string, apiKey: string | undefined): Pr
   }
 }
 
+async function fetchSteamPlaytime(steamId: string, apiKey: string | undefined) {
+  if (!apiKey) return undefined
+  try {
+    const response = await $fetch('https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/', {
+      method: 'GET',
+      query: {
+        key: apiKey,
+        steamid: steamId,
+        format: 'json',
+        'appids_filter[0]': 440
+      }
+    })
+    const game = response?.response?.games?.find((entry: any) => Number(entry.appid) === 440)
+    if (!game) return undefined
+
+    return {
+      totalMinutes: Number(game.playtime_forever) || 0,
+      recentMinutes: Number(game.playtime_2weeks) || 0
+    }
+  } catch {
+    return undefined
+  }
+}
+
 function fetchLogDetail(logsTfUrl: string, summary: any): Promise<any | null> {
   const logId = String(summary.id)
   const cacheKey = `${logsTfUrl}/${logId}`
@@ -167,8 +191,10 @@ export default defineEventHandler(async (event) => {
     
     const details = await fetchLogDetails(logsTfUrl, summaries, LOG_DETAIL_BUDGET_MS)
 
-    // Fetch Steam avatar in parallel
-    const avatarUrl = await fetchSteamAvatar(id, steamApiKey)
+    const [avatarUrl, steamPlaytime] = await Promise.all([
+      fetchSteamAvatar(id, steamApiKey),
+      fetchSteamPlaytime(id, steamApiKey)
+    ])
 
     const steam3Id = toSteam3Id(id)
     const classMap = new Map<string, any>()
@@ -288,6 +314,7 @@ export default defineEventHandler(async (event) => {
         name,
         steamId: id,
         avatarUrl,
+        steamPlaytime,
         totalLogs: totalLogs,
         requestedLimit: safeLimit,
         logsReturned: summaries.length,
