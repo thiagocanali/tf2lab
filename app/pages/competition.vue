@@ -6,7 +6,7 @@
         <p class="eyebrow"><span class="eyebrow-mark" aria-hidden="true">VS</span> TF2Lab Competition</p>
         <h1 id="competition-title">Ligas, times e partidas em um só lugar.</h1>
         <p class="hero-description">
-          Encontre onde jogar, acompanhe a cena e prepare cada partida com contexto competitivo, do primeiro PUG à próxima temporada.
+          Encontre onde jogar, acompanhe a cena brasileira e prepare cada partida com contexto competitivo, do primeiro PUG à próxima temporada.
         </p>
         <div class="hero-actions">
           <a href="#cena" class="primary-link">Explorar a cena <span aria-hidden="true">-&gt;</span></a>
@@ -29,11 +29,11 @@
           <p class="section-kicker">Onde a comunidade joga</p>
           <h2 id="scene-title">Cena competitiva</h2>
         </div>
-        <p class="section-intro">Comece por uma liga ou plataforma, encontre seu próximo jogo e acompanhe as referências da cena.</p>
+        <p class="section-intro">A cena brasileira vem primeiro: encontre ligas, duelos e PUGs em suas plataformas oficiais.</p>
       </header>
 
       <div class="scene-group">
-        <div class="group-label"><span class="group-dot group-dot--red" /> Brasil</div>
+        <div class="group-label"><span class="group-dot group-dot--red" /> Brasil em foco</div>
         <div class="scene-grid">
           <a v-for="card in brazilScene" :key="card.name" :href="card.url" target="_blank" rel="noopener noreferrer" class="scene-card scene-card--red">
             <div class="scene-card-top"><span class="scene-mark">{{ card.mark }}</span><span class="external-mark" aria-hidden="true">↗</span></div>
@@ -45,7 +45,7 @@
       </div>
 
       <div class="scene-group scene-group--international">
-        <div class="group-label"><span class="group-dot group-dot--blue" /> Internacional</div>
+        <div class="group-label"><span class="group-dot group-dot--blue" /> Cena internacional</div>
         <div class="scene-grid">
           <a v-for="card in internationalScene" :key="card.name" :href="card.url" target="_blank" rel="noopener noreferrer" class="scene-card scene-card--blue">
             <div class="scene-card-top"><span class="scene-mark">{{ card.mark }}</span><span class="external-mark" aria-hidden="true">↗</span></div>
@@ -78,7 +78,7 @@
       <div>
         <p class="section-kicker">Integração no horizonte</p>
         <h2 id="api-title">Mais contexto para cada partida</h2>
-        <p>No futuro, o TF2Lab poderá integrar a API do tf2pickup para trazer jogos de jogadores e links de <code>logsUrl</code> e <code>demoUrl</code>. Por enquanto, esta página é um mapa da cena e dos próximos módulos.</p>
+        <p>Esta página reúne os pontos de entrada oficiais da comunidade, sem fetch de API. O TF2Lab adiciona contexto e ferramentas sem substituir as plataformas que já sustentam a cena.</p>
       </div>
     </section>
   </main>
@@ -86,8 +86,10 @@
 
 <script setup lang="ts">
 const brazilScene = [
-  { name: 'TFCL', mark: 'BR', description: 'Ligas, temporadas e competição organizada para a comunidade brasileira.', url: 'https://alpha.tfcleague.com' },
-  { name: 'br.tf2pickup.org', mark: 'PUG', description: 'Encontre partidas e pratique em um ambiente aberto para jogadores.', url: 'https://br.tf2pickup.org' }
+  { name: 'FBTF', mark: 'BR', description: 'Liga brasileira com campeonatos e competição organizada para a comunidade.', url: 'https://fbtf.tf/' },
+  { name: 'Brasil Fortress', mark: 'BR', description: 'Acompanhe a cena competitiva brasileira e suas competições.', url: 'https://bf.sonikro.com/' },
+  { name: 'MGE.tf', mark: 'MGE', description: 'Duelos e treino de MGE para jogadores da América do Sul.', url: 'https://mge.tf/' },
+  { name: 'br.tf2pickup.org', mark: 'PUG', description: 'Encontre PUGs brasileiros e pratique em partidas organizadas.', url: 'https://br.tf2pickup.org' }
 ]
 
 const internationalScene = [
