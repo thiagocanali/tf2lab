@@ -125,22 +125,21 @@ const statusHint = computed(() => {
 
 <style scoped>
 .executive-summary {
-  margin: var(--space-lg) 0;
-  padding-bottom: var(--space-lg);
-  border-bottom: 2px solid rgba(255, 79, 60, 0.12);
+  margin: 0;
+  padding: 0;
 }
 
 .summary-container {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--space-md);
+  gap: 0.75rem;
 }
 
 .summary-card {
-  padding: 1.2rem;
-  border-radius: 14px;
-  background: linear-gradient(135deg, rgba(255, 79, 60, 0.06), rgba(255, 79, 60, 0.03));
-  border: 1px solid rgba(255, 79, 60, 0.15);
+  padding: 0.9rem;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(255, 79, 60, 0.1), rgba(27, 32, 48, 0.94) 72%);
+  border: 1px solid rgba(255, 79, 60, 0.22);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -151,13 +150,13 @@ const statusHint = computed(() => {
   grid-column: span 1;
   align-items: center;
   justify-content: center;
-  min-height: 180px;
+  min-height: 156px;
 }
 
 .score-ring {
   position: relative;
-  width: 120px;
-  height: 120px;
+  width: 104px;
+  height: 104px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -240,7 +239,7 @@ const statusHint = computed(() => {
 }
 
 .summary-status {
-  min-height: 120px;
+  min-height: 0;
   justify-content: center;
 }
 

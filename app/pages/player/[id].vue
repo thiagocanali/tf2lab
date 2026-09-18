@@ -320,18 +320,19 @@ const breadcrumbs = computed(() => [
 
 <style scoped>
 .page-player {
+  --profile-gap: 0.9rem;
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
-  padding: clamp(1rem, 3vw, 2.25rem) 0;
+  gap: var(--profile-gap);
+  padding: clamp(0.75rem, 2vw, 1.5rem) 0;
 }
 
 .profile-section {
   display: flex;
   flex-direction: column;
-  gap: var(--space-lg);
-  padding: var(--space-xl) 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  gap: var(--profile-gap);
+  padding: 0.9rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .profile-section:first-of-type {
@@ -339,14 +340,14 @@ const breadcrumbs = computed(() => [
 }
 
 .profile-section--primary {
-  gap: var(--space-lg);
-  padding-top: var(--space-lg);
+  gap: var(--profile-gap);
+  padding-top: 0;
 }
 
 .profile-section--controls {
-  gap: var(--space-md);
-  padding-top: var(--space-lg);
-  padding-bottom: var(--space-lg);
+  gap: 0.65rem;
+  padding: 0.75rem 0;
+  border-top-color: rgba(255, 155, 51, 0.35);
 }
 
 .profile-section--analysis {
@@ -364,6 +365,7 @@ const breadcrumbs = computed(() => [
 .profile-section--charts {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--profile-gap);
   align-items: stretch;
 }
 
@@ -373,7 +375,7 @@ const breadcrumbs = computed(() => [
 
 .section-grid {
   display: grid;
-  gap: var(--space-md);
+  gap: var(--profile-gap);
 }
 
 .section-grid--two {
@@ -388,7 +390,7 @@ const breadcrumbs = computed(() => [
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
-  padding: var(--space-lg);
+  padding: var(--space-md);
   border: 1px solid rgba(255, 79, 60, 0.12);
   border-radius: var(--radius);
   background: rgba(18, 20, 32, 0.5);
@@ -410,16 +412,16 @@ const breadcrumbs = computed(() => [
   justify-content: space-between;
   align-items: center;
   gap: var(--space-md);
-  margin: var(--space-md) 0;
-  padding: var(--space-sm) 0;
-  border-top: 1px solid rgba(255, 79, 60, 0.06);
-  border-bottom: 1px solid rgba(255, 79, 60, 0.06);
+  margin: 0;
+  padding: 0.15rem 0 0.65rem;
+  border-bottom: 1px solid rgba(255, 155, 51, 0.18);
 }
 
 .section-heading h2 {
   margin: 0;
   color: var(--text);
-  font-size: var(--font-size-xl);
+  font-size: 1.15rem;
+  letter-spacing: 0.01em;
 }
 
 .eyebrow {
@@ -434,10 +436,10 @@ const breadcrumbs = computed(() => [
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 999px;
-  padding: 0.35rem;
+  background: rgba(10, 12, 19, 0.8);
+  border: 1px solid rgba(58, 128, 255, 0.3);
+  border-radius: 8px;
+  padding: 0.25rem;
   flex-wrap: wrap;
 }
 
@@ -446,8 +448,8 @@ const breadcrumbs = computed(() => [
   background: transparent;
   color: var(--text-soft);
   cursor: pointer;
-  border-radius: 999px;
-  padding: 0.45rem 0.7rem;
+  border-radius: 5px;
+  padding: 0.4rem 0.65rem;
   min-width: 3.2rem;
   font-weight: 700;
 }
@@ -459,9 +461,9 @@ const breadcrumbs = computed(() => [
 }
 
 .analysis-warning {
-  margin: 0 0 var(--space-md);
-  padding: 0.75rem 1rem;
-  border-radius: 12px;
+  margin: 0;
+  padding: 0.65rem 0.8rem;
+  border-radius: 6px;
   background: rgba(255, 179, 71, 0.08);
   border: 1px solid rgba(255, 179, 71, 0.25);
   color: #f7d39a;
@@ -471,7 +473,66 @@ const breadcrumbs = computed(() => [
 .content-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.5fr) minmax(18rem, 1fr);
-  gap: var(--space-lg);
+  gap: var(--profile-gap);
+}
+
+:deep(.chart-card),
+:deep(.insights-card),
+:deep(.recommendations-card),
+:deep(.highlights-card),
+:deep(.trend-analysis-card),
+:deep(.best-logs-card),
+:deep(.logs-list-card),
+:deep(.class-stats-card) {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.18);
+}
+
+:deep(.chart-card:hover),
+:deep(.best-log-card:hover),
+:deep(.class-card:hover),
+:deep(.log-items li:hover) {
+  border-color: rgba(255, 155, 51, 0.48);
+}
+
+:deep(.insights-card),
+:deep(.recommendations-card),
+:deep(.highlights-card),
+:deep(.trend-analysis-card),
+:deep(.best-logs-card),
+:deep(.logs-list-card),
+:deep(.class-stats-card) {
+  padding: var(--space-md);
+}
+
+:deep(.insights-header h3),
+:deep(.recommendations-header h3),
+:deep(.highlights-header h3),
+:deep(.trend-header h3),
+:deep(.panel-header h3),
+:deep(.header-row h3) {
+  font-size: 1.05rem;
+  letter-spacing: 0;
+}
+
+:deep(.insights-grid),
+:deep(.recommendations-list),
+:deep(.highlights-grid),
+:deep(.trends-grid),
+:deep(.best-logs-grid) {
+  gap: 0.7rem;
+  margin-top: 0.9rem;
+}
+
+:deep(.chart-card__header) {
+  padding: 0.8rem 0.9rem 0.6rem;
+}
+
+:deep(.chart-card__canvas),
+:deep(.chart-card__empty) {
+  height: 240px;
+  min-height: 240px;
 }
 
 .empty-state {
@@ -529,7 +590,7 @@ const breadcrumbs = computed(() => [
     grid-template-columns: 1fr;
   }
   .profile-section {
-    padding: var(--space-sm) 0;
+    padding: 0.75rem 0;
   }
 
   .section-heading {
@@ -547,7 +608,7 @@ const breadcrumbs = computed(() => [
   .period-selector {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    border-radius: var(--radius);
+    border-radius: 8px;
   }
 
   .period-button {

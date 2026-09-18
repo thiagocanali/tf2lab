@@ -48,25 +48,41 @@ const formattedTime = computed(() => {
 
 <style scoped>
 .player-header-card {
-  background: linear-gradient(180deg, rgba(16, 19, 30, 0.98), rgba(26, 31, 46, 0.96));
-  border: 1px solid rgba(255, 79, 60, 0.18);
-  border-radius: var(--radius);
-  padding: var(--space-lg);
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(105deg, rgba(34, 39, 56, 0.98), rgba(16, 19, 30, 0.98) 64%);
+  border: 1px solid rgba(255, 79, 60, 0.32);
+  border-left: 4px solid var(--tf2-red);
+  border-radius: 8px;
+  padding: var(--space-md) var(--space-lg);
   box-shadow: var(--shadow-soft);
-  margin-bottom: var(--space-md);
+}
+
+.player-header-card::after {
+  position: absolute;
+  right: -3rem;
+  bottom: -4rem;
+  width: 12rem;
+  height: 12rem;
+  border: 1px solid rgba(58, 128, 255, 0.24);
+  border-radius: 50%;
+  content: '';
+  pointer-events: none;
 }
 
 .player-header-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-lg);
+  gap: var(--space-md);
+  position: relative;
+  z-index: 1;
 }
 
 .player-labels {
   display: flex;
   align-items: center;
-  gap: var(--space-md);
+  gap: 0.9rem;
   min-width: 0;
 }
 
@@ -75,15 +91,15 @@ const formattedTime = computed(() => {
 }
 
 .avatar-wrapper {
-  width: 84px;
-  height: 84px;
-  border-radius: 22px;
+  width: 72px;
+  height: 72px;
+  border-radius: 10px;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 2px solid rgba(255, 155, 51, 0.55);
   flex-shrink: 0;
 }
 
@@ -133,11 +149,11 @@ h1 {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.5rem 0.75rem;
-  border-radius: 999px;
-  background: rgba(255, 79, 60, 0.12);
-  border: 1px solid rgba(255, 79, 60, 0.22);
-  color: var(--accent);
+  padding: 0.4rem 0.65rem;
+  border-radius: 5px;
+  background: rgba(58, 128, 255, 0.14);
+  border: 1px solid rgba(58, 128, 255, 0.4);
+  color: #9dc1ff;
   font-size: 0.78rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
