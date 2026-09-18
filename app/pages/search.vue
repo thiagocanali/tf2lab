@@ -35,84 +35,106 @@
       </div>
     </div>
 
-    <!-- Results: Players first (priority), then logs -->
-    <section v-else-if="hasResults" class="results-grid" aria-live="polite">
-<!-- Player Results (priority) -->
-      <article v-for="p in players" :key="p.id" class="result-card result-card--player">
-        <div class="result-card__head">
-          <div class="player-info">
-            <div class="avatar-wrapper">
-              <img v-if="p.avatarUrl" :src="p.avatarUrl" alt="" />
-              <div v-else class="avatar-fallback">{{ getInitials(p.name) }}</div>
-            </div>
-            <div>
-              <h2>{{ p.name }}</h2>
-              <span class="result-card__id">SteamID: {{ p.steamId }}</span>
-            </div>
+    <!-- Results: players are the primary result, logs provide context -->
+    <section v-else-if="hasResults" class="result-groups" aria-live="polite">
+      <section v-if="players.length" class="result-group result-group--players">
+        <div class="result-group__header">
+          <div>
+            <p class="eyebrow">Primary results</p>
+            <h2>Players found</h2>
           </div>
-          <span v-if="queryType === 'steamid'" class="badge badge--success">Exact match</span>
+          <span class="result-group__count">{{ players.length }}</span>
         </div>
-        <div class="result-card__meta player-stats">
-          <div class="stat" v-if="p.overview.matches">
-            <span>Matches</span>
-            <strong>{{ p.overview.matches }}</strong>
-          </div>
-          <div class="stat" v-if="p.overview.kdRatio !== undefined">
-            <span>K/D</span>
-            <strong>{{ p.overview.kdRatio.toFixed(2) }}</strong>
-          </div>
-          <div class="stat" v-if="p.overview.totalKills">
-            <span>Kills</span>
-            <strong>{{ p.overview.totalKills }}</strong>
-          </div>
-          <div class="stat" v-if="p.overview.totalDamage">
-            <span>Damage</span>
-            <strong>{{ p.overview.totalDamage.toLocaleString() }}</strong>
-          </div>
-        </div>
-        <div class="result-card__actions">
-          <NuxtLink class="action-link action-link--primary" :to="`/player/${p.steamId ?? p.id}`">
-            View player profile →
-          </NuxtLink>
-        </div>
-      </article>
 
-      <!-- Log Results -->
-      <p v-if="queryType === 'playername' && players.length === 0" class="player-search-hint">
-        We found related logs, but no player nick matched exactly. Try another alias or their SteamID64.
-      </p>
+        <div class="results-grid">
+          <article v-for="p in players" :key="p.id" class="result-card result-card--player">
+            <div class="result-card__head">
+              <div class="player-info">
+                <div class="avatar-wrapper">
+                  <img v-if="p.avatarUrl" :src="p.avatarUrl" alt="" />
+                  <div v-else class="avatar-fallback">{{ getInitials(p.name) }}</div>
+                </div>
+                <div>
+                  <h2>{{ p.name }}</h2>
+                  <span class="result-card__id">SteamID: {{ p.steamId }}</span>
+                </div>
+              </div>
+              <span v-if="queryType === 'steamid'" class="badge badge--success">Exact match</span>
+            </div>
+            <div class="result-card__meta player-stats">
+              <div class="stat" v-if="p.overview.matches">
+                <span>Matches</span>
+                <strong>{{ p.overview.matches }}</strong>
+              </div>
+              <div class="stat" v-if="p.overview.kdRatio !== undefined">
+                <span>K/D</span>
+                <strong>{{ p.overview.kdRatio.toFixed(2) }}</strong>
+              </div>
+              <div class="stat" v-if="p.overview.totalKills">
+                <span>Kills</span>
+                <strong>{{ p.overview.totalKills }}</strong>
+              </div>
+              <div class="stat" v-if="p.overview.totalDamage">
+                <span>Damage</span>
+                <strong>{{ p.overview.totalDamage.toLocaleString() }}</strong>
+              </div>
+            </div>
+            <div class="result-card__actions">
+              <NuxtLink class="action-link action-link--primary" :to="`/player/${p.steamId ?? p.id}`">
+                View player profile →
+              </NuxtLink>
+            </div>
+          </article>
+        </div>
+      </section>
 
-      <article v-for="r in results" :key="r.id" class="result-card">
-        <div class="result-card__head">
-          <h2>{{ r.title ?? ('Log ' + r.id) }}</h2>
-          <span v-if="r.url" class="result-card__id">#{{ r.id }}</span>
+      <section v-if="results.length" class="result-group result-group--logs">
+        <div class="result-group__header">
+          <div>
+            <p class="eyebrow">Secondary results</p>
+            <h2>Related logs</h2>
+          </div>
+          <span class="result-group__count">{{ results.length }}</span>
         </div>
-        <div class="result-card__meta">
-          <span v-if="r.map">Map: <strong>{{ r.map }}</strong></span>
-          <span v-if="r.timestamp">• {{ formatDate(r.timestamp) }}</span>
+
+        <p v-if="queryType === 'playername' && players.length === 0" class="player-search-hint">
+          Related logs found, but no player nick matched this search. Try another alias or the SteamID64.
+        </p>
+
+        <div class="results-grid results-grid--logs">
+          <article v-for="r in results" :key="r.id" class="result-card">
+            <div class="result-card__head">
+              <h2>{{ r.title ?? ('Log ' + r.id) }}</h2>
+              <span v-if="r.url" class="result-card__id">#{{ r.id }}</span>
+            </div>
+            <div class="result-card__meta">
+              <span v-if="r.map">Map: <strong>{{ r.map }}</strong></span>
+              <span v-if="r.timestamp">• {{ formatDate(r.timestamp) }}</span>
+            </div>
+            <div class="result-card__actions">
+              <NuxtLink class="action-link action-link--primary" :to="`/log/${r.id}`">
+                View log
+              </NuxtLink>
+              <NuxtLink
+                v-if="r.players?.[0]?.steamid || r.players?.[0]?.steamId"
+                class="action-link"
+                :to="`/player/${r.players[0].steamid ?? r.players[0].steamId}`"
+              >
+                Player profile
+              </NuxtLink>
+              <a
+                v-if="r.url"
+                class="action-link"
+                :href="r.url"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Open on logs.tf ↗
+              </a>
+            </div>
+          </article>
         </div>
-        <div class="result-card__actions">
-          <NuxtLink class="action-link action-link--primary" :to="`/log/${r.id}`">
-            View log
-          </NuxtLink>
-          <NuxtLink
-            v-if="r.players?.[0]?.steamid || r.players?.[0]?.steamId"
-            class="action-link"
-            :to="`/player/${r.players[0].steamid ?? r.players[0].steamId}`"
-          >
-            Player profile
-          </NuxtLink>
-          <a
-            v-if="r.url"
-            class="action-link"
-            :href="r.url"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Open on logs.tf ↗
-          </a>
-        </div>
-      </article>
+      </section>
     </section>
 
     <!-- Empty state: searched but nothing found -->
@@ -357,6 +379,61 @@ onMounted(() => {
   gap: var(--space-md);
 }
 
+.result-groups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+
+.result-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.result-group--players {
+  padding: var(--space-md);
+  border: 1px solid rgba(255, 79, 60, 0.18);
+  border-left: 3px solid var(--tf2-red);
+  border-radius: 8px;
+  background: linear-gradient(105deg, rgba(255, 59, 48, 0.08), rgba(18, 20, 32, 0.22) 62%);
+}
+
+.result-group__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.result-group__header .eyebrow {
+  margin-bottom: 0.25rem;
+  color: var(--tf2-orange);
+}
+
+.result-group__header h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 1.2rem;
+}
+
+.result-group__count {
+  display: inline-flex;
+  min-width: 2rem;
+  justify-content: center;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid rgba(58, 128, 255, 0.32);
+  border-radius: 5px;
+  background: rgba(58, 128, 255, 0.12);
+  color: #a9c7ff;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.results-grid--logs {
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
 .result-card {
   display: flex;
   flex-direction: column;
@@ -371,10 +448,10 @@ onMounted(() => {
 .result-card:hover { transform: translateY(-2px); border-color: rgba(255, 79, 60, 0.32); }
 
 .result-card--player {
-  border-color: rgba(0, 200, 81, 0.2);
-  background: linear-gradient(180deg, rgba(18, 20, 32, 0.98), rgba(28, 34, 52, 0.98));
+  border-color: rgba(255, 155, 51, 0.28);
+  background: linear-gradient(180deg, rgba(30, 34, 48, 0.98), rgba(18, 20, 32, 0.98));
 }
-.result-card--player:hover { border-color: rgba(0, 200, 81, 0.4); }
+.result-card--player:hover { border-color: rgba(255, 155, 51, 0.62); }
 
 .player-info {
   display: flex;
@@ -382,11 +459,12 @@ onMounted(() => {
   gap: var(--space-md);
 }
 .avatar-wrapper {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.08);
+  background: linear-gradient(135deg, rgba(255, 79, 60, 0.22), rgba(58, 128, 255, 0.22));
+  border: 1px solid rgba(255, 155, 51, 0.45);
   flex-shrink: 0;
 }
 .avatar-wrapper img { width: 100%; height: 100%; object-fit: cover; }
@@ -572,5 +650,8 @@ onMounted(() => {
   .search-form input { min-height: 2.6rem; }
   .search-form button { width: 100%; }
   .pagination { flex-direction: column; }
+  .result-groups { gap: var(--space-lg); }
+  .result-group--players { padding: var(--space-sm); }
+  .result-group__header { align-items: flex-start; }
 }
 </style>

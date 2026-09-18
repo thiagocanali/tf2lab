@@ -5,7 +5,7 @@ const cache = new Map()
 const CACHE_TTL = 60 * 1000 // 60s
 const STEAM64_BASE = '76561197960265728'
 const PROFILE_LOG_LIMIT = 5
-const NAME_SEARCH_LOG_LIMIT = 40
+const NAME_SEARCH_LOG_LIMIT = 100
 
 function toSteam3Id(steamId: string): string {
   if (!/^\d{17}$/.test(steamId)) return steamId
@@ -43,6 +43,26 @@ function toLogReference(log: any) {
     map: info?.map,
     timestamp: info?.date ? new Date(info.date * 1000).toISOString() : info?.timestamp
   }
+}
+
+async function fetchSteamAvatar(steamId: string, apiKey: string | undefined): Promise<string> {
+  if (!apiKey) return ''
+  try {
+    const response = await $fetch('https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/', {
+      method: 'GET',
+      query: { key: apiKey, steamids: steamId }
+    })
+    return response?.response?.players?.[0]?.avatarfull ?? ''
+  } catch {
+    return ''
+  }
+}
+
+async function addPlayerAvatars(players: any[], apiKey: string | undefined) {
+  return await Promise.all(players.map(async (player) => ({
+    ...player,
+    avatarUrl: await fetchSteamAvatar(player.steamId ?? player.id, apiKey)
+  })))
 }
 
 async function fetchLogDetails(logsTfUrl: string, logs: any[], limit = PROFILE_LOG_LIMIT) {
@@ -112,7 +132,13 @@ function toSteam64Id(steam3Id: string): string | undefined {
 }
 
 function normalizePlayerName(name: string): string {
-  return name.trim().toLocaleLowerCase().replace(/\s+/g, ' ')
+  return name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+    .replace(/\s+/g, ' ')
 }
 
 function getPlayersFromLog(log: any) {
@@ -139,12 +165,15 @@ function scoreNameMatch(query: string, candidate: string): number {
   if (!normalizedQuery || !normalizedCandidate) return 0
   if (normalizedCandidate === normalizedQuery) return 100
   if (normalizedCandidate.startsWith(normalizedQuery)) return 90
-  if (normalizedCandidate.includes(normalizedQuery)) return 80
+  if (normalizedCandidate.includes(normalizedQuery)) return 82
 
   const queryTokens = normalizedQuery.split(' ').filter(Boolean)
   const candidateTokens = normalizedCandidate.split(' ').filter(Boolean)
-  const matches = queryTokens.filter((token) => candidateTokens.some((candidateToken) => candidateToken.includes(token))).length
-  if (matches > 0) return 60 + matches * 10
+  const matches = queryTokens.filter((token) => candidateTokens.some((candidateToken) =>
+    candidateToken === token || candidateToken.startsWith(token) || candidateToken.includes(token)
+  )).length
+  if (matches === queryTokens.length) return 78 + matches * 4
+  if (matches > 0) return 52 + matches * 8
   return 0
 }
 
@@ -162,9 +191,11 @@ function buildNamePlayerCards(query: string, details: any[]) {
         name: player.name,
         steamId: player.steamId,
         avatarUrl: '',
-        overview: { totalKills: 0, totalDeaths: 0, kdRatio: 0, totalDamage: 0, matches: 0, timePlayed: 0 }
+        overview: { totalKills: 0, totalDeaths: 0, kdRatio: 0, totalDamage: 0, matches: 0, timePlayed: 0 },
+        matchScore: 0,
+        aliases: new Set<string>()
       }
-      card.name = card.name || player.name
+      if ((card.matchScore ?? 0) < matchScore) card.name = player.name
       card.overview.totalKills += player.kills ?? 0
       card.overview.totalDeaths += player.deaths ?? 0
       card.overview.totalDamage += player.dmg ?? player.damage ?? 0
@@ -173,12 +204,14 @@ function buildNamePlayerCards(query: string, details: any[]) {
         ? card.overview.totalKills / card.overview.totalDeaths
         : card.overview.totalKills
       card.matchScore = Math.max(card.matchScore ?? 0, matchScore)
+      card.aliases.add(player.name)
       cards.set(player.steamId, card)
     }
   }
 
   return Array.from(cards.values())
     .sort((first, second) => (second.matchScore ?? 0) - (first.matchScore ?? 0) || second.overview.matches - first.overview.matches || second.overview.totalDamage - first.overview.totalDamage)
+    .map(({ aliases, ...card }) => card)
     .slice(0, 10)
 }
 
@@ -224,6 +257,7 @@ export default defineEventHandler(async (event) => {
 
   const runtime = useRuntimeConfig()
   const logsTfUrl = runtime?.public?.logsTfUrl ?? 'https://logs.tf/api/v1/log'
+  const steamApiKey = runtime?.steamApiKey
 
   // If no query provided, return empty with suggestion
   if (!query.trim()) {
@@ -268,7 +302,7 @@ export default defineEventHandler(async (event) => {
       // the primary result is a real player card with meaningful performance stats.
       if (logs.length > 0) {
         const details = await fetchLogDetails(logsTfUrl, logs)
-        players = [buildPlayerCard(query, details)]
+        players = await addPlayerAvatars([buildPlayerCard(query, details)], steamApiKey)
       }
     } else if (queryType === 'playername') {
       // logs.tf indexes titles, not player names. We sample both title matches and
@@ -283,7 +317,10 @@ export default defineEventHandler(async (event) => {
 
       results = titleLogs.map((log: any) => ({ id: String(log.id), ...log }))
       total = titleResponse?.total ?? results.length
-      players = buildNamePlayerCards(query, await fetchLogDetails(logsTfUrl, candidateLogs, NAME_SEARCH_LOG_LIMIT))
+      players = await addPlayerAvatars(
+        buildNamePlayerCards(query, await fetchLogDetails(logsTfUrl, candidateLogs, candidateLogs.length)),
+        steamApiKey
+      )
     }
 
     const payload = {
