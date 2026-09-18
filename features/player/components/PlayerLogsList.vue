@@ -21,7 +21,7 @@
           class="limit-input"
           type="number"
           min="1"
-          max="200"
+          max="10000"
           :value="limit"
           aria-label="Quantidade personalizada de logs"
           @input="handleCustomLimit(($event.target as HTMLInputElement).value)"
@@ -75,12 +75,12 @@ const showApiWarning = computed(() =>
   totalLogs.value >= requestedLimit.value
 )
 
-const limitOptions = [5, 10, 20, 30, 50, 100]
+const limitOptions = [10, 30, 60, 100]
 
 const handleCustomLimit = (value: string) => {
   const parsed = Number(value)
   if (!Number.isFinite(parsed)) return
-  const nextValue = Math.min(Math.max(1, parsed), 200)
+  const nextValue = Math.min(Math.max(1, parsed), 10000)
   emit('update:limit', nextValue)
 }
 
@@ -150,7 +150,7 @@ const number = (value?: number) => new Intl.NumberFormat('en-US').format(value ?
   border-radius: 999px;
   padding: 0.45rem 0.65rem;
   font: inherit;
-  text-align: center.
+  text-align: center;
 }
 
 .limit-button.active {
@@ -220,19 +220,19 @@ const number = (value?: number) => new Intl.NumberFormat('en-US').format(value ?
 .log-link {
   color: var(--accent);
   font-weight: 700;
-  white-space: nowrap.
+  white-space: nowrap;
 }
 
 @media (max-width: 640px) {
   .header-row,
   .log-items li {
     flex-direction: column;
-    align-items: flex-start.
+    align-items: flex-start;
   }
 
   .limit-selector {
     width: 100%;
-    justify-content: space-between.
+    justify-content: space-between;
   }
 }
 </style>

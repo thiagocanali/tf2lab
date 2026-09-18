@@ -32,7 +32,7 @@
               type="button"
               class="period-button"
               :class="{ active: selectedPeriod === option }"
-              @click="selectedPeriod = option"
+              @click="selectLogLimit(option)"
             >
               {{ option === 'all' ? 'Tudo' : `${option}` }}
             </button>
@@ -104,7 +104,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { PlayerProfile } from '~~/features/player/types'
 import Breadcrumbs from '~~/components/Breadcrumbs.vue'
 import BackButton from '~~/components/BackButton.vue'
@@ -142,6 +142,15 @@ const { data: res, pending, error } = await useAsyncData(
     watch: [selectedLogLimit]
   }
 )
+
+const selectLogLimit = (option: number | 'all') => {
+  selectedPeriod.value = option
+  selectedLogLimit.value = option === 'all' ? 10000 : option
+}
+
+watch(selectedLogLimit, (limit) => {
+  selectedPeriod.value = limit === 10000 ? 'all' : limit
+})
 
 const player = computed<PlayerProfile | undefined>(() => {
   const payload = res.value as { data?: PlayerProfile } | null | undefined

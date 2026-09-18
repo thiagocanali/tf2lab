@@ -2,19 +2,20 @@ import { getRouterParam } from 'h3'
 
 const STEAM64_BASE = '76561197960265728'
 const ANALYZED_LOG_LIMIT = 10
-const MAX_PLAYER_LOG_LIMIT = 200
-const MAX_PLAYER_LOGS_TO_KEEP = 200
-const LOGS_TF_MAX_PAGE_SIZE = 100
+const MAX_PLAYER_LOG_LIMIT = 10000
+const MAX_PLAYER_LOGS_TO_KEEP = 10000
+const LOGS_TF_MAX_PAGE_SIZE = 10000
 const DETAIL_FETCH_BATCH = 50
 
 async function fetchPlayerLogSummaries(logsTfUrl: string, playerId: string, requestedLimit: number) {
   const targetLimit = Math.max(1, requestedLimit || ANALYZED_LOG_LIMIT)
-  const pageSize = Math.min(LOGS_TF_MAX_PAGE_SIZE, Math.max(targetLimit, 25))
+  const summaryLimit = Math.min(MAX_PLAYER_LOGS_TO_KEEP, targetLimit + DETAIL_FETCH_BATCH)
+  const pageSize = Math.min(LOGS_TF_MAX_PAGE_SIZE, Math.max(summaryLimit, 25))
   const results: any[] = []
   let total = 0
   let offset = 0
 
-  while (results.length < Math.min(targetLimit, MAX_PLAYER_LOGS_TO_KEEP) && offset < 10000) {
+  while (results.length < summaryLimit && offset < MAX_PLAYER_LOGS_TO_KEEP) {
     const response = await $fetch(`${logsTfUrl}?player=${encodeURIComponent(playerId)}&limit=${pageSize}&offset=${offset}`, { method: 'GET' })
     const pageLogs = response?.logs ?? response?.results ?? []
     if (!pageLogs.length) break
@@ -27,7 +28,7 @@ async function fetchPlayerLogSummaries(logsTfUrl: string, playerId: string, requ
   }
 
   return {
-    logs: results.slice(0, Math.min(targetLimit, MAX_PLAYER_LOGS_TO_KEEP)),
+    logs: results.slice(0, summaryLimit),
     total: Number.isFinite(total) && total > 0 ? total : results.length
   }
 }
