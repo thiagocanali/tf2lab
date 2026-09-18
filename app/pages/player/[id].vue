@@ -80,7 +80,7 @@
             :limit="selectedLogLimit"
             :total-logs="player?.totalLogs ?? totalRecentLogs"
             :requested-limit="player?.requestedLimit ?? selectedLogLimit"
-            :api-log-count="player?.logsReturned"
+            :returned-log-count="player?.logsReturned"
             :analyzed-log-count="player?.logsAnalyzed ?? totalRecentLogs"
             @update:limit="selectedLogLimit = $event"
           />

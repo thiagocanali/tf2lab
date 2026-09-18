@@ -30,7 +30,7 @@
     </div>
 
     <div class="summary-row">
-      <span>{{ logs.length }} exibidos · {{ analyzedLogCount }} analisados · {{ totalLogs }} total do jogador</span>
+      <span>{{ returnedLogCount }} listados · {{ analyzedLogCount }} analisados · {{ logs.length }} exibidos · {{ totalLogs }} total do jogador</span>
       <span v-if="showApiWarning" class="meta warning">A API retornou menos do que pediu.</span>
       <span v-else class="meta">Limite atual: {{ limit }}</span>
     </div>
@@ -59,7 +59,7 @@ const props = defineProps<{
   limit?: number 
   totalLogs?: number 
   requestedLimit?: number
-  apiLogCount?: number
+  returnedLogCount?: number
   analyzedLogCount?: number
 }>()
 const emit = defineEmits<{ 'update:limit': [value: number] }>()
@@ -67,11 +67,11 @@ const emit = defineEmits<{ 'update:limit': [value: number] }>()
 const limit = computed(() => Math.max(1, props.limit ?? 10))
 const totalLogs = computed(() => Math.max(0, Number(props.totalLogs ?? props.logs.length ?? 0)))
 const requestedLimit = computed(() => Math.max(1, Number(props.requestedLimit ?? props.limit ?? limit.value)))
-const apiLogCount = computed(() => props.apiLogCount == null ? null : Math.max(0, Number(props.apiLogCount)))
+const returnedLogCount = computed(() => props.returnedLogCount == null ? null : Math.max(0, Number(props.returnedLogCount)))
 const analyzedLogCount = computed(() => Math.max(0, Number(props.analyzedLogCount ?? props.logs.length ?? 0)))
 
 const showApiWarning = computed(() => 
-  apiLogCount.value !== null && apiLogCount.value < requestedLimit.value
+  returnedLogCount.value !== null && returnedLogCount.value < requestedLimit.value
 )
 
 const limitOptions = [10, 30, 60, 100]
