@@ -3,19 +3,16 @@ import { getRouterParam } from 'h3'
 const STEAM64_BASE = '76561197960265728'
 const ANALYZED_LOG_LIMIT = 10
 const MAX_PLAYER_LOG_LIMIT = 10000
-const MAX_PLAYER_LOGS_TO_KEEP = 10000
 const LOGS_TF_MAX_PAGE_SIZE = 10000
-const DETAIL_FETCH_BATCH = 50
 
 async function fetchPlayerLogSummaries(logsTfUrl: string, playerId: string, requestedLimit: number) {
   const targetLimit = Math.max(1, requestedLimit || ANALYZED_LOG_LIMIT)
-  const summaryLimit = Math.min(MAX_PLAYER_LOGS_TO_KEEP, targetLimit + DETAIL_FETCH_BATCH)
-  const pageSize = Math.min(LOGS_TF_MAX_PAGE_SIZE, Math.max(summaryLimit, 25))
+  const pageSize = Math.min(LOGS_TF_MAX_PAGE_SIZE, targetLimit)
   const results: any[] = []
   let total = 0
   let offset = 0
 
-  while (results.length < summaryLimit && offset < MAX_PLAYER_LOGS_TO_KEEP) {
+  while (results.length < targetLimit) {
     const response = await $fetch(`${logsTfUrl}?player=${encodeURIComponent(playerId)}&limit=${pageSize}&offset=${offset}`, { method: 'GET' })
     const pageLogs = response?.logs ?? response?.results ?? []
     if (!pageLogs.length) break
@@ -28,7 +25,7 @@ async function fetchPlayerLogSummaries(logsTfUrl: string, playerId: string, requ
   }
 
   return {
-    logs: results.slice(0, summaryLimit),
+    logs: results.slice(0, targetLimit),
     total: Number.isFinite(total) && total > 0 ? total : results.length
   }
 }
@@ -111,10 +108,8 @@ export default defineEventHandler(async (event) => {
     const { logs: summaries, total: rawTotalLogs } = await fetchPlayerLogSummaries(logsTfUrl, id, safeLimit)
     const totalLogs = Number.isFinite(rawTotalLogs) ? rawTotalLogs : summaries.length
     
-    // Fetch details for more logs than needed to compensate for failures/missing player
-    const fetchLimit = Math.min(safeLimit + DETAIL_FETCH_BATCH, MAX_PLAYER_LOGS_TO_KEEP, summaries.length)
     const details = await Promise.all(
-      summaries.slice(0, fetchLimit).map(async (summary: any) => {
+      summaries.map(async (summary: any) => {
         try { return { ...(await $fetch(`${logsTfUrl}/${summary.id}`, { method: 'GET' })), id: summary.id } } catch { return null }
       })
     )
@@ -241,6 +236,9 @@ export default defineEventHandler(async (event) => {
         steamId: id,
         avatarUrl,
         totalLogs: totalLogs,
+        requestedLimit: safeLimit,
+        logsReturned: summaries.length,
+        logsAnalyzed: recentLogs.length,
         overview: {
           totalKills,
           totalDeaths,
