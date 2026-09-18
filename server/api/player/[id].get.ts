@@ -9,7 +9,7 @@ async function fetchPlayerLogSummaries(logsTfUrl: string, playerId: string, requ
   const targetLimit = Math.max(1, requestedLimit || ANALYZED_LOG_LIMIT)
   const pageSize = Math.min(LOGS_TF_MAX_PAGE_SIZE, targetLimit)
   const results: any[] = []
-  let total = 0
+  let total: number | undefined
   let offset = 0
 
   while (results.length < targetLimit) {
@@ -18,15 +18,16 @@ async function fetchPlayerLogSummaries(logsTfUrl: string, playerId: string, requ
     if (!pageLogs.length) break
 
     results.push(...pageLogs)
-    total = Number(response?.total ?? results.length)
+    const responseTotal = Number(response?.total)
+    if (Number.isFinite(responseTotal)) total = responseTotal
 
-    if (results.length >= total || pageLogs.length < pageSize) break
+    if ((total !== undefined && results.length >= total) || pageLogs.length < pageSize) break
     offset += pageSize
   }
 
   return {
     logs: results.slice(0, targetLimit),
-    total: Number.isFinite(total) && total > 0 ? total : results.length
+    total: total ?? results.length
   }
 }
 
