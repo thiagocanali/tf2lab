@@ -65,6 +65,9 @@ export interface PlayerProfile {
   steamId?: string
   avatarUrl?: string
   totalLogs?: number
+  requestedLimit?: number
+  logsReturned?: number
+  logsAnalyzed?: number
   overview: PlayerOverviewStats
   classStats?: PlayerClassStat[]
   recentLogs?: PlayerLogReference[]

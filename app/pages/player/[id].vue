@@ -79,8 +79,9 @@
             :logs="visibleLogs"
             :limit="selectedLogLimit"
             :total-logs="player?.totalLogs ?? totalRecentLogs"
-            :requested-limit="selectedLogLimit"
-            :api-log-count="player?.recentLogs?.length"
+            :requested-limit="player?.requestedLimit ?? selectedLogLimit"
+            :api-log-count="player?.logsReturned"
+            :analyzed-log-count="player?.logsAnalyzed ?? totalRecentLogs"
             @update:limit="selectedLogLimit = $event"
           />
           <PlayerClassStats :classes="filteredClassStats" />

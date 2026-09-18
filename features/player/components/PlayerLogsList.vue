@@ -30,7 +30,7 @@
     </div>
 
     <div class="summary-row">
-      <span>{{ logs.length }} / {{ totalLogs }} logs</span>
+      <span>{{ logs.length }} exibidos · {{ analyzedLogCount }} analisados · {{ totalLogs }} total do jogador</span>
       <span v-if="showApiWarning" class="meta warning">A API retornou menos do que pediu.</span>
       <span v-else class="meta">Limite atual: {{ limit }}</span>
     </div>
@@ -59,20 +59,19 @@ const props = defineProps<{
   limit?: number 
   totalLogs?: number 
   requestedLimit?: number
-  apiLogCount?: number  // Total logs returned by API (before period filtering)
+  apiLogCount?: number
+  analyzedLogCount?: number
 }>()
 const emit = defineEmits<{ 'update:limit': [value: number] }>()
 
 const limit = computed(() => Math.max(1, props.limit ?? 10))
 const totalLogs = computed(() => Math.max(0, Number(props.totalLogs ?? props.logs.length ?? 0)))
 const requestedLimit = computed(() => Math.max(1, Number(props.requestedLimit ?? props.limit ?? limit.value)))
-const apiLogCount = computed(() => Math.max(0, Number(props.apiLogCount ?? props.logs.length ?? 0)))
+const apiLogCount = computed(() => props.apiLogCount == null ? null : Math.max(0, Number(props.apiLogCount)))
+const analyzedLogCount = computed(() => Math.max(0, Number(props.analyzedLogCount ?? props.logs.length ?? 0)))
 
-// Only warn if API returned fewer logs than requested (not due to period filtering)
 const showApiWarning = computed(() => 
-  apiLogCount.value > 0 && 
-  apiLogCount.value < requestedLimit.value && 
-  totalLogs.value >= requestedLimit.value
+  apiLogCount.value !== null && apiLogCount.value < requestedLimit.value
 )
 
 const limitOptions = [10, 30, 60, 100]
