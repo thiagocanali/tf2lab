@@ -82,6 +82,9 @@
             :requested-limit="player?.requestedLimit ?? selectedLogLimit"
             :returned-log-count="player?.logsReturned"
             :analyzed-log-count="player?.logsAnalyzed ?? totalRecentLogs"
+            :logs-tf-returned="player?.logsTfReturned"
+            :trends-tf-returned="player?.trendsTfReturned"
+            :trends-tf-available="player?.trendsTfAvailable"
             @update:limit="selectedLogLimit = $event"
           />
           <PlayerClassStats :classes="filteredClassStats" />

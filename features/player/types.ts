@@ -1,5 +1,6 @@
 export interface PlayerLogReference {
   id: string
+  source?: 'logs.tf' | 'trends.tf' | 'both'
   title?: string
   map?: string
   timestamp?: string
@@ -72,6 +73,9 @@ export interface PlayerProfile {
   requestedLimit?: number
   logsReturned?: number
   logsAnalyzed?: number
+  logsTfReturned?: number
+  trendsTfReturned?: number
+  trendsTfAvailable?: boolean
   overview: PlayerOverviewStats
   classStats?: PlayerClassStat[]
   recentLogs?: PlayerLogReference[]

@@ -14,7 +14,8 @@ export default defineNuxtConfig({
   runtimeConfig: {
     steamApiKey: process.env.STEAM_API_KEY,
     public: {
-      logsTfUrl: process.env.LOGS_TF_URL || 'https://logs.tf/api/v1/log'
+      logsTfUrl: process.env.LOGS_TF_URL || 'https://logs.tf/api/v1/log',
+      trendsTfUrl: process.env.TRENDS_TF_URL || 'https://trends.tf/api/v1/logs'
     }
   }
 })

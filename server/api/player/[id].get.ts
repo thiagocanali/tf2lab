@@ -9,8 +9,11 @@ const LOG_DETAIL_ATTEMPTS = 2
 const LOG_DETAIL_TIMEOUT_MS = 4000
 const LOG_DETAIL_RETRY_DELAY_MS = 150
 const LOG_DETAIL_BUDGET_MS = 20000
+const TRENDS_TF_TIMEOUT_MS = 3000
+const TRENDS_TF_CACHE_TTL_MS = 60 * 1000
 
 const logDetailCache = new Map<string, Promise<any | null>>()
+const trendsCache = new Map<string, { expiresAt: number; value: Promise<any> }>()
 
 async function fetchPlayerLogSummaries(logsTfUrl: string, playerId: string, requestedLimit: number) {
   const targetLimit = Math.max(1, requestedLimit || ANALYZED_LOG_LIMIT)
@@ -36,6 +39,44 @@ async function fetchPlayerLogSummaries(logsTfUrl: string, playerId: string, requ
     logs: results.slice(0, targetLimit),
     total: total ?? results.length
   }
+}
+
+async function fetchTrendsLogSummaries(trendsTfUrl: string, playerId: string, requestedLimit: number) {
+  const cacheKey = `${trendsTfUrl}|${playerId}|${requestedLimit}`
+  const cached = trendsCache.get(cacheKey)
+  if (cached && cached.expiresAt > Date.now()) return cached.value
+
+  const request = (async () => {
+    const response = await $fetch(trendsTfUrl, {
+      method: 'GET',
+      query: {
+        steamid64: playerId,
+        limit: Math.min(100, Math.max(1, requestedLimit))
+      },
+      timeout: TRENDS_TF_TIMEOUT_MS
+    })
+    const logs = response?.logs ?? response?.results ?? []
+    const total = Number(response?.total)
+
+    return {
+      logs: logs.map((log: any) => ({
+        id: String(log.logid ?? log.id),
+        title: log.title,
+        map: log.map,
+        timestamp: log.time ? new Date(Number(log.time) * 1000).toISOString() : undefined,
+        format: log.format,
+        league: log.league
+      })).filter((log: any) => log.id && log.id !== 'undefined'),
+      total: Number.isFinite(total) ? total : logs.length,
+      available: true
+    }
+  })()
+
+  trendsCache.set(cacheKey, { expiresAt: Date.now() + TRENDS_TF_CACHE_TTL_MS, value: request })
+  request.catch(() => {
+    if (trendsCache.get(cacheKey)?.value === request) trendsCache.delete(cacheKey)
+  })
+  return request
 }
 
 async function fetchSteamAvatar(steamId: string, apiKey: string | undefined): Promise<string> {
@@ -155,6 +196,9 @@ function emptyProfile(id: string) {
       matches: 0,
       timePlayed: 0
     },
+    logsTfReturned: 0,
+    trendsTfReturned: 0,
+    trendsTfAvailable: false,
     classStats: [],
     recentLogs: []
   }
@@ -183,11 +227,25 @@ export default defineEventHandler(async (event) => {
 
   const config = useRuntimeConfig()
   const logsTfUrl = config.public?.logsTfUrl ?? 'https://logs.tf/api/v1/log'
+  const trendsTfUrl = config.public?.trendsTfUrl ?? 'https://trends.tf/api/v1/logs'
   const steamApiKey = config.steamApiKey
 
   try {
-    const { logs: summaries, total: rawTotalLogs } = await fetchPlayerLogSummaries(logsTfUrl, id, safeLimit)
-    const totalLogs = Number.isFinite(rawTotalLogs) ? rawTotalLogs : summaries.length
+    const [logsResult, trendsResult] = await Promise.allSettled([
+      fetchPlayerLogSummaries(logsTfUrl, id, safeLimit),
+      fetchTrendsLogSummaries(trendsTfUrl, id, safeLimit)
+    ])
+    const logsTfData = logsResult.status === 'fulfilled' ? logsResult.value : { logs: [], total: 0 }
+    const trendsTfData = trendsResult.status === 'fulfilled' ? trendsResult.value : { logs: [], total: 0, available: false }
+    const logsTfSummaries = logsTfData.logs
+    const trendsTfSummaries = trendsTfData.logs
+    const logsById = new Map(logsTfSummaries.map((log: any) => [String(log.id), log]))
+    const trendsOnlySummaries = trendsTfSummaries
+      .filter((log: any) => !logsById.has(String(log.id)))
+      .map((log: any) => ({ ...log, source: 'trends.tf' }))
+    const summaries = [...logsTfSummaries.map((log: any) => ({ ...log, source: 'logs.tf' })), ...trendsOnlySummaries]
+      .slice(0, safeLimit)
+    const totalLogs = logsTfResultTotal(logsTfData.total, trendsTfData.total, logsTfSummaries.length, trendsTfSummaries.length)
     
     const details = await fetchLogDetails(logsTfUrl, summaries, LOG_DETAIL_BUDGET_MS)
 
@@ -246,8 +304,10 @@ export default defineEventHandler(async (event) => {
         const heals = player.heals ?? 0
         const kd = deaths ? kills / deaths : kills
 
+        const summary = summaries.find((entry: any) => String(entry.id) === String(log.id))
         recentLogs.push({
           id: String(log.id),
+          source: summary?.source ?? 'logs.tf',
           title: log.info?.title ?? `Log ${log.id}`,
           map: log.info?.map,
           timestamp: log.info?.date ? new Date(log.info.date * 1000).toISOString() : undefined,
@@ -319,6 +379,9 @@ export default defineEventHandler(async (event) => {
         requestedLimit: safeLimit,
         logsReturned: summaries.length,
         logsAnalyzed: details.filter(Boolean).length,
+        logsTfReturned: logsTfSummaries.length,
+        trendsTfReturned: trendsTfSummaries.length,
+        trendsTfAvailable: trendsTfData.available,
         overview: {
           totalKills,
           totalDeaths,
@@ -342,3 +405,8 @@ export default defineEventHandler(async (event) => {
     return { data: emptyProfile(id) }
   }
 })
+
+function logsTfResultTotal(logsTfTotal: number, trendsTfTotal: number, logsTfCount: number, trendsTfCount: number) {
+  if (logsTfCount > 0 || logsTfTotal > 0) return Number.isFinite(logsTfTotal) ? logsTfTotal : logsTfCount
+  return Number.isFinite(trendsTfTotal) ? trendsTfTotal : trendsTfCount
+}

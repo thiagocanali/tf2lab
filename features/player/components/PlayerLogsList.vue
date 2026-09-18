@@ -31,6 +31,7 @@
 
     <div class="summary-row">
       <span>{{ returnedLogCount }} listados · {{ analyzedLogCount }} analisados · {{ logs.length }} exibidos · {{ totalLogs }} total do jogador</span>
+      <span v-if="trendsTfAvailable" class="meta source-count">logs.tf {{ logsTfReturned ?? 0 }} · trends.tf {{ trendsTfReturned ?? 0 }}</span>
       <span v-if="showApiWarning" class="meta warning">A API retornou menos do que pediu.</span>
       <span v-else-if="showDetailWarning" class="meta warning">Algumas logs não puderam ser carregadas agora.</span>
       <span v-else class="meta">Limite atual: {{ limit }}</span>
@@ -62,6 +63,9 @@ const props = defineProps<{
   requestedLimit?: number
   returnedLogCount?: number
   analyzedLogCount?: number
+  logsTfReturned?: number
+  trendsTfReturned?: number
+  trendsTfAvailable?: boolean
 }>()
 const emit = defineEmits<{ 'update:limit': [value: number] }>()
 
@@ -70,6 +74,9 @@ const totalLogs = computed(() => Math.max(0, Number(props.totalLogs ?? props.log
 const requestedLimit = computed(() => Math.max(1, Number(props.requestedLimit ?? props.limit ?? limit.value)))
 const returnedLogCount = computed(() => props.returnedLogCount == null ? null : Math.max(0, Number(props.returnedLogCount)))
 const analyzedLogCount = computed(() => Math.max(0, Number(props.analyzedLogCount ?? props.logs.length ?? 0)))
+const logsTfReturned = computed(() => Math.max(0, Number(props.logsTfReturned ?? 0)))
+const trendsTfReturned = computed(() => Math.max(0, Number(props.trendsTfReturned ?? 0)))
+const trendsTfAvailable = computed(() => props.trendsTfAvailable === true)
 
 const showApiWarning = computed(() => 
   returnedLogCount.value !== null && returnedLogCount.value < requestedLimit.value
