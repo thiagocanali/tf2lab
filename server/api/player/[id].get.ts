@@ -5,6 +5,10 @@ const ANALYZED_LOG_LIMIT = 10
 const MAX_PLAYER_LOG_LIMIT = 10000
 const LOGS_TF_MAX_PAGE_SIZE = 10000
 const LOG_DETAIL_CONCURRENCY = 6
+const LOG_DETAIL_ATTEMPTS = 2
+const LOG_DETAIL_TIMEOUT_MS = 4000
+const LOG_DETAIL_RETRY_DELAY_MS = 150
+const LOG_DETAIL_BUDGET_MS = 20000
 
 const logDetailCache = new Map<string, Promise<any | null>>()
 
@@ -53,27 +57,43 @@ async function fetchSteamAvatar(steamId: string, apiKey: string | undefined): Pr
 
 function fetchLogDetail(logsTfUrl: string, summary: any): Promise<any | null> {
   const logId = String(summary.id)
-  const cached = logDetailCache.get(logId)
+  const cacheKey = `${logsTfUrl}/${logId}`
+  const cached = logDetailCache.get(cacheKey)
   if (cached) return cached
 
   let request: Promise<any | null>
-  request = $fetch(`${logsTfUrl}/${encodeURIComponent(logId)}`, { method: 'GET' })
-    .then((response: any) => response?.success === false ? null : { ...response, id: logId })
-    .catch(() => {
-      if (logDetailCache.get(logId) === request) logDetailCache.delete(logId)
-      return null
-    })
+  request = (async () => {
+    for (let attempt = 0; attempt < LOG_DETAIL_ATTEMPTS; attempt++) {
+      try {
+        const response = await $fetch(`${logsTfUrl}/${encodeURIComponent(logId)}`, {
+          method: 'GET',
+          timeout: LOG_DETAIL_TIMEOUT_MS
+        })
+        return response?.success === false ? null : { ...response, id: logId }
+      } catch {
+        if (attempt < LOG_DETAIL_ATTEMPTS - 1) {
+          await new Promise((resolve) => setTimeout(resolve, LOG_DETAIL_RETRY_DELAY_MS))
+        }
+      }
+    }
 
-  logDetailCache.set(logId, request)
+    return null
+  })().then((detail) => {
+    if (detail === null && logDetailCache.get(cacheKey) === request) logDetailCache.delete(cacheKey)
+    return detail
+  })
+
+  logDetailCache.set(cacheKey, request)
   return request
 }
 
-async function fetchLogDetails(logsTfUrl: string, summaries: any[]) {
+async function fetchLogDetails(logsTfUrl: string, summaries: any[], budgetMs: number) {
   const details = new Array<any | null>(summaries.length)
   let nextIndex = 0
+  const deadline = Date.now() + budgetMs
 
   const worker = async () => {
-    while (nextIndex < summaries.length) {
+    while (nextIndex < summaries.length && Date.now() < deadline) {
       const index = nextIndex++
       details[index] = await fetchLogDetail(logsTfUrl, summaries[index])
     }
@@ -145,7 +165,7 @@ export default defineEventHandler(async (event) => {
     const { logs: summaries, total: rawTotalLogs } = await fetchPlayerLogSummaries(logsTfUrl, id, safeLimit)
     const totalLogs = Number.isFinite(rawTotalLogs) ? rawTotalLogs : summaries.length
     
-    const details = await fetchLogDetails(logsTfUrl, summaries)
+    const details = await fetchLogDetails(logsTfUrl, summaries, LOG_DETAIL_BUDGET_MS)
 
     // Fetch Steam avatar in parallel
     const avatarUrl = await fetchSteamAvatar(id, steamApiKey)
