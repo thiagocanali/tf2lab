@@ -19,6 +19,31 @@
         </div>
       </section>
 
+      <section class="profile-section profile-section--controls">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Janela de análise</p>
+            <h2>{{ periodLabel }}</h2>
+          </div>
+          <div class="period-selector" role="tablist" aria-label="Período de análise">
+            <button
+              v-for="option in periodOptions"
+              :key="option"
+              type="button"
+              class="period-button"
+              :class="{ active: selectedPeriod === option }"
+              @click="selectedPeriod = option"
+            >
+              {{ option === 'all' ? 'Tudo' : `${option}` }}
+            </button>
+          </div>
+        </div>
+
+        <div v-if="!hasEnoughLogsForAnalysis" class="analysis-warning">
+          A análise de evolução precisa de pelo menos {{ minimumLogsForAnalysis }} logs para ser confiável.
+        </div>
+      </section>
+
       <section class="profile-section profile-section--analysis">
         <div class="section-grid section-grid--two">
           <PerformanceInsights :overview="filteredOverview" :total-logs="totalRecentLogs" />
@@ -33,42 +58,15 @@
         </div>
       </section>
 
-      <div class="analysis-toolbar">
-        <div>
-          <p class="eyebrow">Análise por período</p>
-          <h3>{{ periodLabel }}</h3>
-        </div>
-        <div class="period-selector" role="tablist" aria-label="Período de análise">
-          <button
-            v-for="option in periodOptions"
-            :key="option"
-            type="button"
-            class="period-button"
-            :class="{ active: selectedPeriod === option }"
-            @click="selectedPeriod = option"
-          >
-            {{ option === 'all' ? 'Tudo' : `${option}` }}
-          </button>
-        </div>
-      </div>
-
-      <div v-if="!hasEnoughLogsForAnalysis" class="analysis-warning">
-        A análise de evolução precisa de pelo menos {{ minimumLogsForAnalysis }} logs para ser confiável.
-      </div>
-
       <section class="profile-section profile-section--charts">
-        <div class="charts-grid">
-          <KDTrendChart :series="kdSeries" title="K/D por partida" series-name="K/D" color="var(--tf2-red)" />
-          <KDTrendChart :series="damageTrendSeries" title="Damage por partida" series-name="Damage" color="#4ade80" />
-          <ClassUsageRadar :classes="classUsage" />
-        </div>
+        <KDTrendChart :series="kdSeries" title="K/D por partida" series-name="K/D" color="var(--tf2-red)" />
+        <KDTrendChart :series="damageTrendSeries" title="Damage por partida" series-name="Damage" color="#4ade80" />
+        <ClassUsageRadar :classes="classUsage" />
       </section>
 
-      <section class="profile-section profile-section--charts">
-        <div class="charts-grid charts-grid--secondary">
-          <KDTrendChart :series="healingTrendSeries" title="Cura por partida" series-name="Heals" color="#60a5fa" />
-          <ClassPerformanceChart :stats="filteredClassStats" metric="damage" title="Damage por classe" />
-        </div>
+      <section class="profile-section profile-section--charts profile-section--charts-secondary">
+        <KDTrendChart :series="healingTrendSeries" title="Cura por partida" series-name="Heals" color="#60a5fa" />
+        <ClassPerformanceChart :stats="filteredClassStats" metric="damage" title="Damage por classe" />
       </section>
 
       <section class="profile-section profile-section--best-logs">
@@ -315,40 +313,53 @@ const breadcrumbs = computed(() => [
 .page-player {
   display: flex;
   flex-direction: column;
-  gap: 0;
-  padding: clamp(1rem, 3vw, 2rem) 0;
+  gap: var(--space-md);
+  padding: clamp(1rem, 3vw, 2.25rem) 0;
 }
 
 .profile-section {
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
-  padding: var(--space-md) 0;
-  border-bottom: 1px solid rgba(255, 79, 60, 0.06);
+  gap: var(--space-lg);
+  padding: var(--space-xl) 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.profile-section:last-of-type {
-  border-bottom: none;
+.profile-section:first-of-type {
+  border-top: 0;
 }
 
 .profile-section--primary {
-  gap: var(--space-md);
+  gap: var(--space-lg);
+  padding-top: var(--space-lg);
 }
 
-.profile-section--analysis,
-.profile-section--highlights {
+.profile-section--controls {
   gap: var(--space-md);
+  padding-top: var(--space-lg);
+  padding-bottom: var(--space-lg);
+}
+
+.profile-section--analysis {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(18rem, 0.85fr);
+  align-items: start;
+}
+
+.profile-section--highlights {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
 }
 
 .profile-section--charts {
-  gap: var(--space-md);
-  padding: var(--space-md) 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
 }
 
-.profile-section--best-logs,
-.profile-section--logs-stats {
-  gap: 0;
-  padding: var(--space-md) 0;
+.profile-section--charts-secondary {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .section-grid {
@@ -385,7 +396,7 @@ const breadcrumbs = computed(() => [
 .skeleton-line--md { width: 70%; }
 @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
-.analysis-toolbar {
+.section-heading {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -396,9 +407,10 @@ const breadcrumbs = computed(() => [
   border-bottom: 1px solid rgba(255, 79, 60, 0.06);
 }
 
-.analysis-toolbar h3 {
+.section-heading h2 {
   margin: 0;
   color: var(--text);
+  font-size: var(--font-size-xl);
 }
 
 .eyebrow {
@@ -447,26 +459,10 @@ const breadcrumbs = computed(() => [
   font-size: 0.88rem;
 }
 
-.charts-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-md);
-}
-
-.charts-grid--secondary {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
 .content-grid {
   display: grid;
-  grid-template-columns: 1.5fr 1fr;
-  gap: var(--space-md);
-  align-items: stretch;
-}
-
-.content-grid > * {
-  height: 100%;
-  min-height: 400px;
+  grid-template-columns: minmax(0, 1.5fr) minmax(18rem, 1fr);
+  gap: var(--space-lg);
 }
 
 .empty-state {
@@ -516,17 +512,38 @@ const breadcrumbs = computed(() => [
     grid-template-columns: 1fr;
   }
 
-  .content-grid > * {
-    min-height: auto;
-  }
-
-  .charts-grid,
-  .charts-grid--secondary {
+  .content-grid,
+  .profile-section--analysis,
+  .profile-section--highlights,
+  .profile-section--charts,
+  .profile-section--charts-secondary {
     grid-template-columns: 1fr;
   }
-
   .profile-section {
     padding: var(--space-sm) 0;
+  }
+
+  .section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .period-selector {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 520px) {
+  .period-selector {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    border-radius: var(--radius);
+  }
+
+  .period-button {
+    min-width: 0;
+    padding-inline: 0.45rem;
   }
 }
 </style>
