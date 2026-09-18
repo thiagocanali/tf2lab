@@ -78,7 +78,7 @@ const secondaryMetrics = computed(() => [
     value: number.format(props.overview.totalDeaths)
   },
   {
-    label: 'Tempo Jogado',
+    label: 'Tempo nas logs',
     value: `${Math.floor(props.overview.timePlayed / 3600)}h`
   }
 ])

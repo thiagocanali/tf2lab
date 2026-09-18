@@ -13,9 +13,11 @@
           <div class="meta">
             <span>SteamID: {{ player.steamId ?? player.id }}</span>
             <span>•</span>
-            <span>Tempo jogado: {{ formattedTime }}</span>
+            <span>Tempo nas logs: {{ formattedLogTime }}</span>
             <span>•</span>
-            <span>{{ player.totalLogs ?? player.overview?.matches ?? 0 }} logs</span>
+            <span>Steam TF2: {{ formattedSteamTime }}</span>
+            <span>•</span>
+            <span>{{ player.totalLogs ?? player.overview?.matches ?? 0 }} logs no logs.tf</span>
           </div>
         </div>
       </div>
@@ -38,11 +40,22 @@ const initials = computed(() => {
   return parts.slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'PL'
 })
 
-const formattedTime = computed(() => {
+const formatHours = (minutes: number) => {
+  const hours = minutes / 60
+  return hours >= 10 ? `${Math.round(hours)}h` : `${hours.toFixed(1)}h`
+}
+
+const formattedLogTime = computed(() => {
   const seconds = Number(props.player.overview?.timePlayed ?? 0)
   const hours = Math.floor(seconds / 3600)
   const minutes = Math.floor((seconds % 3600) / 60)
   return `${hours}h ${minutes}m`
+})
+
+const formattedSteamTime = computed(() => {
+  const playtime = props.player.steamPlaytime
+  if (!playtime) return 'indisponível'
+  return `${formatHours(playtime.totalMinutes)} total · ${formatHours(playtime.recentMinutes)} nas últimas 2 semanas`
 })
 </script>
 

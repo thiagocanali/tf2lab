@@ -64,6 +64,10 @@ export interface PlayerProfile {
   name: string
   steamId?: string
   avatarUrl?: string
+  steamPlaytime?: {
+    totalMinutes: number
+    recentMinutes: number
+  }
   totalLogs?: number
   requestedLimit?: number
   logsReturned?: number
