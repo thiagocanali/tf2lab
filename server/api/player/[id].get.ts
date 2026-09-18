@@ -4,6 +4,9 @@ const STEAM64_BASE = '76561197960265728'
 const ANALYZED_LOG_LIMIT = 10
 const MAX_PLAYER_LOG_LIMIT = 10000
 const LOGS_TF_MAX_PAGE_SIZE = 10000
+const LOG_DETAIL_CONCURRENCY = 6
+
+const logDetailCache = new Map<string, Promise<any | null>>()
 
 async function fetchPlayerLogSummaries(logsTfUrl: string, playerId: string, requestedLimit: number) {
   const targetLimit = Math.max(1, requestedLimit || ANALYZED_LOG_LIMIT)
@@ -46,6 +49,39 @@ async function fetchSteamAvatar(steamId: string, apiKey: string | undefined): Pr
   } catch {
     return ''
   }
+}
+
+function fetchLogDetail(logsTfUrl: string, summary: any): Promise<any | null> {
+  const logId = String(summary.id)
+  const cached = logDetailCache.get(logId)
+  if (cached) return cached
+
+  let request: Promise<any | null>
+  request = $fetch(`${logsTfUrl}/${encodeURIComponent(logId)}`, { method: 'GET' })
+    .then((response: any) => response?.success === false ? null : { ...response, id: logId })
+    .catch(() => {
+      if (logDetailCache.get(logId) === request) logDetailCache.delete(logId)
+      return null
+    })
+
+  logDetailCache.set(logId, request)
+  return request
+}
+
+async function fetchLogDetails(logsTfUrl: string, summaries: any[]) {
+  const details = new Array<any | null>(summaries.length)
+  let nextIndex = 0
+
+  const worker = async () => {
+    while (nextIndex < summaries.length) {
+      const index = nextIndex++
+      details[index] = await fetchLogDetail(logsTfUrl, summaries[index])
+    }
+  }
+
+  const workerCount = Math.min(LOG_DETAIL_CONCURRENCY, summaries.length)
+  await Promise.all(Array.from({ length: workerCount }, worker))
+  return details
 }
 
 function toSteam3Id(steamId: string): string {
@@ -109,11 +145,7 @@ export default defineEventHandler(async (event) => {
     const { logs: summaries, total: rawTotalLogs } = await fetchPlayerLogSummaries(logsTfUrl, id, safeLimit)
     const totalLogs = Number.isFinite(rawTotalLogs) ? rawTotalLogs : summaries.length
     
-    const details = await Promise.all(
-      summaries.map(async (summary: any) => {
-        try { return { ...(await $fetch(`${logsTfUrl}/${summary.id}`, { method: 'GET' })), id: summary.id } } catch { return null }
-      })
-    )
+    const details = await fetchLogDetails(logsTfUrl, summaries)
 
     // Fetch Steam avatar in parallel
     const avatarUrl = await fetchSteamAvatar(id, steamApiKey)
@@ -239,7 +271,7 @@ export default defineEventHandler(async (event) => {
         totalLogs: totalLogs,
         requestedLimit: safeLimit,
         logsReturned: summaries.length,
-        logsAnalyzed: recentLogs.length,
+        logsAnalyzed: details.filter(Boolean).length,
         overview: {
           totalKills,
           totalDeaths,
