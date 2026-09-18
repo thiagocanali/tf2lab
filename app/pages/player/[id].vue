@@ -351,18 +351,6 @@ const breadcrumbs = computed(() => [
   border-top-color: rgba(255, 155, 51, 0.35);
 }
 
-.profile-section--analysis {
-  display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(18rem, 0.85fr);
-  align-items: start;
-}
-
-.profile-section--highlights {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-items: start;
-}
-
 .profile-section--charts {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -584,8 +572,6 @@ const breadcrumbs = computed(() => [
   }
 
   .content-grid,
-  .profile-section--analysis,
-  .profile-section--highlights,
   .profile-section--charts,
   .profile-section--charts-secondary {
     grid-template-columns: 1fr;
