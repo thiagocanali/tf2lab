@@ -73,6 +73,10 @@
         <BestLogsPanel :logs="bestLogs" :total-logs-analyzed="totalRecentLogs" />
       </section>
 
+      <section class="profile-section profile-section--pickup">
+        <BrTf2PickupMatches :matches="brTf2PickupMatches" :pending="brTf2PickupPending" />
+      </section>
+
       <section class="profile-section profile-section--logs-stats">
         <div class="content-grid">
           <PlayerLogsList
@@ -109,7 +113,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import type { PlayerProfile } from '~~/features/player/types'
+import type { BrTf2PickupMatch, PlayerProfile } from '~~/features/player/types'
 import Breadcrumbs from '~~/components/Breadcrumbs.vue'
 import BackButton from '~~/components/BackButton.vue'
 import PlayerHeader from '~~/features/player/components/PlayerHeader.vue'
@@ -126,6 +130,7 @@ import RecommendationsPanel from '~~/features/player/components/RecommendationsP
 import HighlightsPanel from '~~/features/player/components/HighlightsPanel.vue'
 import TrendAnalysisPanel from '~~/features/player/components/TrendAnalysisPanel.vue'
 import ExecutiveSummary from '~~/features/player/components/ExecutiveSummary.vue'
+import BrTf2PickupMatches from '~~/features/player/components/BrTf2PickupMatches.vue'
 
 // `useRoute`, `useAsyncData`, `$fetch` are auto-imported by Nuxt.
 
@@ -147,6 +152,15 @@ const { data: res, pending, error } = await useAsyncData(
   }
 )
 
+const { data: brTf2PickupRes, pending: brTf2PickupPending } = useAsyncData(
+  `player-br-tf2pickup-${id}`,
+  () => $fetch(`/api/player/${encodeURIComponent(id)}/br.tf2pickup`),
+  {
+    default: () => ({ data: [], available: false }),
+    lazy: true
+  }
+)
+
 const selectLogLimit = (option: number | 'all') => {
   selectedPeriod.value = option
   selectedLogLimit.value = option === 'all' ? 10000 : option
@@ -162,6 +176,7 @@ const player = computed<PlayerProfile | undefined>(() => {
 })
 
 const totalRecentLogs = computed(() => player.value?.recentLogs?.length ?? 0)
+const brTf2PickupMatches = computed(() => (brTf2PickupRes.value as { data?: BrTf2PickupMatch[] } | null)?.data ?? [])
 const periodLabel = computed(() => selectedPeriod.value === 'all' ? 'Todo o histórico' : `Últimos ${selectedPeriod.value} logs`)
 const hasEnoughLogsForAnalysis = computed(() => (player.value?.recentLogs?.length ?? 0) >= minimumLogsForAnalysis)
 

@@ -13,6 +13,15 @@ export interface PlayerLogReference {
   score?: number
 }
 
+export interface BrTf2PickupMatch {
+  id: string
+  map?: string
+  score?: number | string
+  date?: string
+  logsUrl?: string
+  demoUrl?: string
+}
+
 export interface ClassMetricBreakdown {
   name: string
   value: number
