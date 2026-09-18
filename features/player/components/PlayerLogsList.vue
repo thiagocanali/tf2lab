@@ -32,6 +32,7 @@
     <div class="summary-row">
       <span>{{ returnedLogCount }} listados · {{ analyzedLogCount }} analisados · {{ logs.length }} exibidos · {{ totalLogs }} total do jogador</span>
       <span v-if="showApiWarning" class="meta warning">A API retornou menos do que pediu.</span>
+      <span v-else-if="showDetailWarning" class="meta warning">Algumas logs não puderam ser carregadas agora.</span>
       <span v-else class="meta">Limite atual: {{ limit }}</span>
     </div>
 
@@ -72,6 +73,9 @@ const analyzedLogCount = computed(() => Math.max(0, Number(props.analyzedLogCoun
 
 const showApiWarning = computed(() => 
   returnedLogCount.value !== null && returnedLogCount.value < requestedLimit.value
+)
+const showDetailWarning = computed(() =>
+  returnedLogCount.value !== null && analyzedLogCount.value < returnedLogCount.value
 )
 
 const limitOptions = [10, 30, 60, 100]
