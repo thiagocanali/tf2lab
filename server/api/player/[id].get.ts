@@ -291,7 +291,8 @@ export default defineEventHandler(async (event) => {
           deaths: 0,
           assists: 0,
           damage: 0,
-          heals: 0
+          heals: 0,
+          matches: 0
         }
 
         current.timePlayed += stat.total_time ?? 0
@@ -300,6 +301,7 @@ export default defineEventHandler(async (event) => {
         current.assists += stat.assists ?? 0
         current.damage += stat.dmg ?? 0
         current.heals += stat.heals ?? 0
+        current.matches += 1
         classMap.set(stat.type, current)
       }
 
@@ -371,6 +373,16 @@ export default defineEventHandler(async (event) => {
       .sort((a, b) => b.timePlayed - a.timePlayed)
 
     const matches = Math.max(1, recentLogs.length)
+    const mainClass = classStats[0]
+      ? {
+          className: classStats[0].className,
+          timePlayed: classStats[0].timePlayed,
+          timePercentage: timePlayed > 0
+            ? (classStats[0].timePlayed / timePlayed) * 100
+            : (classStats[0].matches / Math.max(1, analyzedMatches)) * 100,
+          matches: classStats[0].matches ?? 0
+        }
+      : undefined
     const avgKills = matches ? totalKills / matches : 0
     const avgDeaths = matches ? totalDeaths / matches : 0
     const avgDamage = matches ? totalDamage / matches : 0
@@ -391,6 +403,7 @@ export default defineEventHandler(async (event) => {
         logsTfReturned: logsTfSummaries.length,
         trendsTfReturned: trendsTfSummaries.length,
         trendsTfAvailable: trendsTfData.available,
+        mainClass,
         overview: {
           totalKills,
           totalDeaths,

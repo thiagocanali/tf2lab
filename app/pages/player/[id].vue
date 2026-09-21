@@ -19,6 +19,10 @@
         </div>
       </section>
 
+      <section class="profile-section profile-section--main-class">
+        <MainClassPanel :main-class="player?.mainClass" :class-stat="mainClassStat" :analyzed-logs="player?.logsAnalyzed ?? totalRecentLogs" />
+      </section>
+
       <section class="profile-section profile-section--controls">
         <div class="section-heading">
           <div>
@@ -131,6 +135,7 @@ import HighlightsPanel from '~~/features/player/components/HighlightsPanel.vue'
 import TrendAnalysisPanel from '~~/features/player/components/TrendAnalysisPanel.vue'
 import ExecutiveSummary from '~~/features/player/components/ExecutiveSummary.vue'
 import BrTf2PickupMatches from '~~/features/player/components/BrTf2PickupMatches.vue'
+import MainClassPanel from '~~/features/player/components/MainClassPanel.vue'
 
 // `useRoute`, `useAsyncData`, `$fetch` are auto-imported by Nuxt.
 
@@ -177,6 +182,10 @@ const player = computed<PlayerProfile | undefined>(() => {
 
 const totalRecentLogs = computed(() => player.value?.recentLogs?.length ?? 0)
 const brTf2PickupMatches = computed(() => (brTf2PickupRes.value as { data?: BrTf2PickupMatch[] } | null)?.data ?? [])
+const mainClassStat = computed(() => {
+  const mainClassName = player.value?.mainClass?.className
+  return player.value?.classStats?.find((stat) => stat.className === mainClassName)
+})
 const periodLabel = computed(() => selectedPeriod.value === 'all' ? 'Todo o histórico' : `Últimos ${selectedPeriod.value} logs`)
 const hasEnoughLogsForAnalysis = computed(() => (player.value?.recentLogs?.length ?? 0) >= minimumLogsForAnalysis)
 

@@ -53,6 +53,13 @@ export interface PlayerClassStat {
   performanceTrend?: PlayerClassTrendPoint[]
 }
 
+export interface PlayerMainClassInsight {
+  className: string
+  timePlayed: number
+  timePercentage: number
+  matches: number
+}
+
 export interface PlayerOverviewStats {
   totalKills: number
   totalDeaths: number
@@ -85,6 +92,7 @@ export interface PlayerProfile {
   logsTfReturned?: number
   trendsTfReturned?: number
   trendsTfAvailable?: boolean
+  mainClass?: PlayerMainClassInsight
   overview: PlayerOverviewStats
   classStats?: PlayerClassStat[]
   recentLogs?: PlayerLogReference[]
