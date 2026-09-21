@@ -50,8 +50,8 @@
 
       <section class="profile-section profile-section--analysis">
         <div class="section-grid section-grid--two">
-          <PerformanceInsights :overview="filteredOverview" :total-logs="totalRecentLogs" />
-          <RecommendationsPanel :overview="filteredOverview" :class-stats="filteredClassStats" :total-logs="totalRecentLogs" />
+          <PerformanceInsights :overview="filteredOverview" :total-logs="player?.logsAnalyzed ?? totalRecentLogs" :main-class-name="player?.mainClass?.className" :class-stat="mainClassStat" />
+          <RecommendationsPanel :overview="filteredOverview" :class-stats="filteredClassStats" :total-logs="player?.logsAnalyzed ?? totalRecentLogs" :main-class-name="player?.mainClass?.className" :class-stat="mainClassStat" />
         </div>
       </section>
 

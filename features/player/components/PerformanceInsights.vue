@@ -5,7 +5,18 @@
       <p class="insights-subtitle">Interpretação do seu desempenho</p>
     </div>
 
-    <div class="insights-grid">
+    <div v-if="classStat && mainClassName" class="insights-grid">
+      <div v-for="insight in classInsights" :key="insight.title" class="insight-item">
+        <div class="insight-icon">{{ insight.icon }}</div>
+        <div class="insight-content">
+          <h4>{{ insight.title }}</h4>
+          <p class="insight-text">{{ insight.text }}</p>
+          <div class="insight-badge" :class="`badge--${insight.level}`">{{ insight.label }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div v-else class="insights-grid">
       <!-- K/D Insight -->
       <div class="insight-item">
         <div class="insight-icon">⚔️</div>
@@ -88,9 +99,58 @@ import type { PlayerOverviewStats } from '~~/features/player/types'
 const props = defineProps<{
   overview: PlayerOverviewStats
   totalLogs: number
+  mainClassName?: string
+  classStat?: PlayerClassStat
 }>()
 
 const hasLowSampleWarning = computed(() => props.totalLogs < 10)
+
+const classInsights = computed(() => {
+  const stat = props.classStat
+  const className = props.mainClassName ?? 'classe principal'
+  if (!stat) return []
+
+  const shared = [
+    {
+      icon: '◈',
+      title: 'Amostra da classe',
+      text: `${className} aparece em ${stat.matches ?? 0} partidas analisadas, dentro de ${props.totalLogs} logs com dados.`,
+      level: props.totalLogs < 5 || (stat.matches ?? 0) < 5 ? 'average' : 'good',
+      label: props.totalLogs < 5 || (stat.matches ?? 0) < 5 ? 'Baixa confiança' : 'Boa base'
+    },
+    {
+      icon: '⚔️',
+      title: `K/D médio: ${(stat.avgKd ?? stat.kd ?? 0).toFixed(2)}`,
+      text: `Você registra ${(stat.avgKills ?? 0).toFixed(1)} kills e ${(stat.avgDeaths ?? 0).toFixed(1)} deaths por partida nessa classe.`,
+      level: 'good',
+      label: 'Dado observado'
+    }
+  ]
+
+  if (className.toLowerCase() === 'medic') {
+    return [
+      {
+        icon: '🏥',
+        title: `Cura média: ${Math.round(stat.avgHeals ?? 0)}`,
+        text: 'Este é o principal sinal de impacto de suporte disponível nas logs analisadas.',
+        level: 'good',
+        label: 'Foco de Medic'
+      },
+      ...shared
+    ]
+  }
+
+  return [
+    {
+      icon: '💥',
+      title: `Damage médio: ${Math.round(stat.avgDamage ?? 0)}`,
+      text: `Sua contribuição de dano por partida como ${className} é o melhor indicador de pressão disponível aqui.`,
+      level: 'good',
+      label: 'Foco de combate'
+    },
+    ...shared
+  ]
+})
 
 // K/D Analysis
 const kdLevel = computed(() => {

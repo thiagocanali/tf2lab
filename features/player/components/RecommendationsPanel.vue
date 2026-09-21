@@ -23,7 +23,7 @@
     </div>
 
     <div class="recommendations-footer">
-      <p>💡 Dica: Análise com mais de 30 logs oferece recomendações mais precisas.</p>
+      <p>💡 {{ confidenceNote }}</p>
     </div>
   </Card>
 </template>
@@ -44,9 +44,58 @@ const props = defineProps<{
   overview: PlayerOverviewStats
   classStats: PlayerClassStat[]
   totalLogs: number
+  mainClassName?: string
+  classStat?: PlayerClassStat
 }>()
 
+const classRecommendations = computed<Recommendation[]>(() => {
+  const stat = props.classStat
+  const className = props.mainClassName?.toLowerCase()
+  if (!stat || !className) return []
+
+  const deathRate = (stat.avgDeaths ?? 0).toFixed(1)
+  const recommendationsByClass: Record<string, Recommendation[]> = {
+    medic: [
+      { title: 'Revisar posicionamento', description: `Você registra ${deathRate} deaths/partida como Medic. Revise as mortes para encontrar posições que deixam seu time sem cura.`, priority: 'high', icon: '🛡️', action: 'Anote a posição antes de cada morte' },
+      { title: 'Treinar cross e leitura', description: 'Pratique acompanhar o jogador que precisa de cura sem perder a visão do próximo perigo.', priority: 'medium', icon: '👁️', action: 'Revise transições entre alvos' },
+      { title: 'Revisar uso de Über', description: 'Use as demos para observar quando a Über foi usada, guardada ou perdida e relacionar isso ao resultado da luta.', priority: 'medium', icon: '⚡', action: 'Marque cada decisão de Über na demo' }
+    ],
+    scout: [
+      { title: 'Treinar DM com saída', description: `Sua média é ${(stat.avgKills ?? 0).toFixed(1)} kills e ${deathRate} deaths por partida. Pratique entrar, causar dano e sair antes do overextend.`, priority: 'high', icon: '🎯', action: 'Faça blocos curtos de DM' },
+      { title: 'Evitar overextend', description: 'Revise as primeiras mortes para separar uma abertura útil de uma entrada sem suporte.', priority: 'medium', icon: '↩️', action: 'Espere o próximo timing do time' },
+      { title: 'Manter pressão e caps', description: 'Treine alternar entre pressionar jogadores isolados e tocar o objetivo quando a luta abrir espaço.', priority: 'medium', icon: '🚩', action: 'Escolha uma prioridade por round' }
+    ],
+    demoman: [
+      { title: 'Treinar spam útil', description: `Seu damage médio é ${Math.round(stat.avgDamage ?? 0)} por partida. Pratique manter dano em choke points sem gastar recursos sem propósito.`, priority: 'high', icon: '💣', action: 'Revise onde seu spam criou espaço' },
+      { title: 'Revisar posicionamento', description: `Com ${deathRate} deaths/partida, observe quando você ficou sem rota de saída antes de uma luta.`, priority: 'medium', icon: '🗺️', action: 'Marque suas rotas de retirada' },
+      { title: 'Aprimorar stickies', description: 'Use treinos de traps e detonação para transformar controle de espaço em dano confirmado.', priority: 'medium', icon: '◉', action: 'Pratique uma trap por mapa' }
+    ],
+    soldier: [
+      { title: 'Aumentar dano seguro', description: `Seu damage médio é ${Math.round(stat.avgDamage ?? 0)} por partida. Treine pressão constante sem trocar vida por dano sem suporte.`, priority: 'high', icon: '💥', action: 'Pratique spam antes do bomb' },
+      { title: 'Revisar entradas', description: `Você registra ${deathRate} deaths/partida. Revise se cada bomb tinha suporte e uma rota de saída.`, priority: 'medium', icon: '🚀', action: 'Marque bombs com e sem follow-up' },
+      { title: 'Treinar mira sob pressão', description: 'Alterne rocket jumps e tiros em alvos móveis para manter impacto depois da entrada.', priority: 'medium', icon: '🎯', action: 'Faça um bloco de aim antes da fila' }
+    ],
+    sniper: [
+      { title: 'Escolher ângulos úteis', description: `Seu damage médio é ${Math.round(stat.avgDamage ?? 0)} por partida. Revise quais ângulos geraram impacto sem expor sua rotação.`, priority: 'high', icon: '🔭', action: 'Marque ângulos seguros por mapa' },
+      { title: 'Treinar troca de alvo', description: `Com ${(stat.avgKills ?? 0).toFixed(1)} kills/partida, pratique trocar rapidamente para o alvo que muda a luta.`, priority: 'medium', icon: '🎯', action: 'Priorize Medic e ameaças abertas' },
+      { title: 'Revisar mortes evitáveis', description: `Observe as ${deathRate} deaths/partida e identifique quando a posição ficou previsível.`, priority: 'medium', icon: '🧭', action: 'Mude de ângulo após cada pick' }
+    ]
+  }
+
+  return recommendationsByClass[className] ?? [
+    { title: 'Aumentar impacto', description: `Seu damage médio é ${Math.round(stat.avgDamage ?? 0)} por partida. Escolha uma situação recorrente para revisar nas demos.`, priority: 'high', icon: '💥', action: 'Marque uma decisão por partida' },
+    { title: 'Revisar posicionamento', description: `Você registra ${deathRate} deaths/partida. Procure padrões nas mortes antes de ajustar sua rotina.`, priority: 'medium', icon: '🧭', action: 'Anote a causa de cada morte' },
+    { title: 'Consolidar a função', description: `Use as ${stat.matches ?? 0} partidas analisadas para repetir uma responsabilidade específica por sessão.`, priority: 'medium', icon: '📌', action: 'Escolha um objetivo por mapa' }
+  ]
+})
+
+const confidenceNote = computed(() => props.totalLogs < 5
+  ? `Amostra baixa: estas dicas usam apenas ${props.totalLogs} logs analisadas.`
+  : `Dicas baseadas em ${props.totalLogs} logs analisadas da sua classe principal.`)
+
 const recommendations = computed<Recommendation[]>(() => {
+  if (props.classStat && props.mainClassName) return classRecommendations.value
+
   const recs: Recommendation[] = []
   const kd = props.overview.avgKd ?? 0
   const dmg = props.overview.avgDamage ?? 0
