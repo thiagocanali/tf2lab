@@ -192,6 +192,7 @@
 @media (max-width: 640px) {
   .header-inner {
     padding: 0.75rem 1rem;
+    gap: 0.75rem;
   }
   .brand-name {
     display: none;
@@ -200,13 +201,16 @@
     display: none;
   }
   .main-nav {
-    gap: 0.2rem;
+    gap: 0.1rem;
+    min-width: 0;
   }
   .main-nav > * {
-    padding: 0.5rem 0.7rem;
+    padding: 0.45rem 0.35rem;
+    font-size: 0.68rem;
+    white-space: nowrap;
   }
-  .main-nav span {
-    display: none;
+  .main-nav .nav-github {
+    padding: 0.45rem;
   }
   .content-area {
     padding: 1rem;

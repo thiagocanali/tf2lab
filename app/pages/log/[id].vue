@@ -157,6 +157,8 @@ const breadcrumbs = computed(() => [
 @media (max-width: 780px) {
   .skeleton-row { grid-template-columns: 1fr; }
   .skeleton-scoreboard { justify-content: flex-start; }
+  .skeleton-table { overflow-x: auto; }
+  .skeleton-row-table { min-width: 34rem; }
 }
 
 .empty-state {

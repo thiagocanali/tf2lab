@@ -10,7 +10,7 @@
       </p>
     </header>
 
-    <form class="search-form" @submit.prevent="onSubmit">
+    <form class="search-form" :aria-busy="loading" @submit.prevent="onSubmit">
       <label class="sr-only" for="search-input">Search</label>
       <span class="search-icon" aria-hidden="true">⌕</span>
       <input
@@ -36,6 +36,13 @@
     </div>
 
     <!-- Results: players are the primary result, logs provide context -->
+    <section v-else-if="searchError" class="empty-state empty-state--error" role="alert">
+      <p class="empty-state__icon" aria-hidden="true">!</p>
+      <h2>Search temporarily unavailable</h2>
+      <p>We couldn't reach the logs.tf search service. Check your connection and try again.</p>
+      <button type="button" class="action-link action-link--primary" @click="runSearch(lastQuery)">Try again</button>
+    </section>
+
     <section v-else-if="hasResults" class="result-groups" aria-live="polite">
       <section v-if="players.length" class="result-group result-group--players">
         <div class="result-group__header">
@@ -210,6 +217,7 @@ const total = ref<number>(0)
 const hasSearched = ref<boolean>(false)
 const lastQuery = ref<string>('')
 const queryType = ref<string>('')
+const searchError = ref(false)
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / PER_PAGE)))
 
@@ -246,6 +254,7 @@ async function runSearch(term: string, targetPage: number = DEFAULT_PAGE) {
   loading.value = true
   hasSearched.value = true
   lastQuery.value = trimmed
+  searchError.value = false
 
   try {
     const res = await service.search(trimmed, targetPage, PER_PAGE)
@@ -258,6 +267,7 @@ async function runSearch(term: string, targetPage: number = DEFAULT_PAGE) {
     results.value = []
     players.value = []
     total.value = 0
+    searchError.value = true
   } finally {
     loading.value = false
   }
@@ -553,6 +563,7 @@ onMounted(() => {
   background: rgba(18, 20, 32, 0.5);
 }
 .empty-state__icon { margin: 0; font-size: 2.5rem; color: var(--accent-soft); }
+.empty-state--error .empty-state__icon { color: var(--tf2-orange); }
 .empty-state h2 { margin: 0; font-size: var(--font-size-xl); color: var(--text); }
 .empty-state p { margin: 0; color: var(--text-soft); }
 .player-search-hint { margin: 0; color: var(--text-soft); font-size: 0.9rem; }
@@ -653,5 +664,9 @@ onMounted(() => {
   .result-groups { gap: var(--space-lg); }
   .result-group--players { padding: var(--space-sm); }
   .result-group__header { align-items: flex-start; }
+  .results-grid,
+  .results-grid--logs { grid-template-columns: minmax(0, 1fr); }
+  .result-card { min-width: 0; padding: var(--space-md); }
+  .result-card__actions .action-link { flex: 1 1 100%; justify-content: center; }
 }
 </style>

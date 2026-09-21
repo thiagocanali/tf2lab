@@ -76,7 +76,7 @@
           </div>
           <h3>Competition</h3>
           <p>Track official matches, scrims, and tournaments. Scout opponents, manage team lineups, and prepare with data-driven insights.</p>
-          <NuxtLink to="/search" class="feature-cta">Explore matches →</NuxtLink>
+          <NuxtLink to="/competition" class="feature-cta">Explore matches →</NuxtLink>
         </article>
 
         <article class="feature-card" :class="{ 'feature-card--academy': true }">
@@ -88,7 +88,7 @@
           </div>
           <h3>Academy</h3>
           <p>Learn competitive TF2 from scratch — guides on configs, HUDs, whitelists, map callouts, and progression from PUGs to leagues.</p>
-          <NuxtLink to="/search" class="feature-cta">Start learning →</NuxtLink>
+          <NuxtLink to="/academy" class="feature-cta">Start learning →</NuxtLink>
         </article>
       </div>
     </section>
