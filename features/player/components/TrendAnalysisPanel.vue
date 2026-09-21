@@ -2,7 +2,7 @@
   <Card class="trend-analysis-card">
     <div class="trend-header">
       <h3>Análise de Tendência</h3>
-      <p class="trend-subtitle">Sua evolução nos últimos logs</p>
+      <p class="trend-subtitle">Anterior → recente · Baseado em {{ analyzedLogs }} logs analisadas de {{ totalLogs }} total</p>
     </div>
 
     <div v-if="trends.length" class="trends-grid">
@@ -19,9 +19,9 @@
         </div>
 
         <div class="trend-info">
-          <span class="trend-first">{{ trend.first }}</span>
+          <span class="trend-first">Anterior {{ trend.first }}</span>
           <span class="trend-arrow-small">→</span>
-          <span class="trend-last">{{ trend.last }}</span>
+          <span class="trend-last">Recente {{ trend.last }}</span>
         </div>
       </div>
     </div>
@@ -49,7 +49,12 @@ interface Trend {
 
 const props = defineProps<{
   recentLogs: PlayerLogReference[]
+  analyzedLogs?: number
+  totalLogs?: number
 }>()
+
+const analyzedLogs = computed(() => props.analyzedLogs ?? props.recentLogs.length)
+const totalLogs = computed(() => props.totalLogs ?? analyzedLogs.value)
 
 const trends = computed<Trend[]>(() => {
   const logs = props.recentLogs
@@ -59,13 +64,13 @@ const trends = computed<Trend[]>(() => {
 
   // Split logs into first half and second half
   const mid = Math.ceil(logs.length / 2)
-  const firstHalf = logs.slice(0, mid)
-  const secondHalf = logs.slice(mid)
+  const recentHalf = logs.slice(0, mid)
+  const previousHalf = logs.slice(mid)
 
   // K/D Analysis
-  const firstKd = firstHalf.reduce((sum, l) => sum + (l.kills ?? 0) / Math.max(1, l.deaths ?? 1), 0) / firstHalf.length
-  const secondKd = secondHalf.reduce((sum, l) => sum + (l.kills ?? 0) / Math.max(1, l.deaths ?? 1), 0) / secondHalf.length
-  const kdChange = ((secondKd - firstKd) / Math.max(0.1, firstKd)) * 100
+  const previousKd = previousHalf.reduce((sum, l) => sum + (l.kills ?? 0) / Math.max(1, l.deaths ?? 1), 0) / previousHalf.length
+  const recentKd = recentHalf.reduce((sum, l) => sum + (l.kills ?? 0) / Math.max(1, l.deaths ?? 1), 0) / recentHalf.length
+  const kdChange = ((recentKd - previousKd) / Math.max(0.1, previousKd)) * 100
 
   trends.push({
     metric: 'K/D Ratio',
@@ -73,15 +78,15 @@ const trends = computed<Trend[]>(() => {
     arrow: kdChange > 5 ? '↑' : kdChange < -5 ? '↓' : '→',
     change: Math.abs(Math.round(kdChange)),
     percentage: Math.min(100, 50 + (kdChange / 2)),
-    first: firstKd.toFixed(2),
-    last: secondKd.toFixed(2),
+    first: previousKd.toFixed(2),
+    last: recentKd.toFixed(2),
     color: kdChange > 5 ? '#22c55e' : kdChange < -5 ? '#ef4444' : '#60a5fa'
   })
 
   // Damage Analysis
-  const firstDmg = firstHalf.reduce((sum, l) => sum + (l.damage ?? 0), 0) / firstHalf.length
-  const secondDmg = secondHalf.reduce((sum, l) => sum + (l.damage ?? 0), 0) / secondHalf.length
-  const dmgChange = ((secondDmg - firstDmg) / Math.max(1, firstDmg)) * 100
+  const previousDmg = previousHalf.reduce((sum, l) => sum + (l.damage ?? 0), 0) / previousHalf.length
+  const recentDmg = recentHalf.reduce((sum, l) => sum + (l.damage ?? 0), 0) / recentHalf.length
+  const dmgChange = ((recentDmg - previousDmg) / Math.max(1, previousDmg)) * 100
 
   trends.push({
     metric: 'Damage Médio',
@@ -89,15 +94,15 @@ const trends = computed<Trend[]>(() => {
     arrow: dmgChange > 5 ? '↑' : dmgChange < -5 ? '↓' : '→',
     change: Math.abs(Math.round(dmgChange)),
     percentage: Math.min(100, 50 + (dmgChange / 2)),
-    first: Math.round(firstDmg).toString(),
-    last: Math.round(secondDmg).toString(),
+    first: Math.round(previousDmg).toString(),
+    last: Math.round(recentDmg).toString(),
     color: dmgChange > 5 ? '#22c55e' : dmgChange < -5 ? '#ef4444' : '#60a5fa'
   })
 
   // Consistency (Deaths per match)
-  const firstDeaths = firstHalf.reduce((sum, l) => sum + (l.deaths ?? 0), 0) / firstHalf.length
-  const secondDeaths = secondHalf.reduce((sum, l) => sum + (l.deaths ?? 0), 0) / secondHalf.length
-  const deathChange = ((secondDeaths - firstDeaths) / Math.max(1, firstDeaths)) * 100
+  const previousDeaths = previousHalf.reduce((sum, l) => sum + (l.deaths ?? 0), 0) / previousHalf.length
+  const recentDeaths = recentHalf.reduce((sum, l) => sum + (l.deaths ?? 0), 0) / recentHalf.length
+  const deathChange = ((recentDeaths - previousDeaths) / Math.max(1, previousDeaths)) * 100
 
   trends.push({
     metric: 'Deaths por Partida',
@@ -105,8 +110,8 @@ const trends = computed<Trend[]>(() => {
     arrow: deathChange < -5 ? '↓' : deathChange > 5 ? '↑' : '→', // Inverted arrows
     change: Math.abs(Math.round(deathChange)),
     percentage: Math.min(100, 50 + (Math.abs(deathChange) / 2)),
-    first: firstDeaths.toFixed(1),
-    last: secondDeaths.toFixed(1),
+    first: previousDeaths.toFixed(1),
+    last: recentDeaths.toFixed(1),
     color: deathChange < -5 ? '#22c55e' : deathChange > 5 ? '#ef4444' : '#60a5fa'
   })
 

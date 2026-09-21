@@ -4,9 +4,20 @@
       <div>
         <p class="eyebrow">Melhores logs</p>
         <h3>Partidas mais fortes</h3>
-        <p class="section-subtitle">Desempenho de pico baseado em score total</p>
+        <p class="section-subtitle">Melhores por {{ rankingLabel }} · Baseado em {{ analyzedLogs }} logs analisadas de {{ totalLogs }} total</p>
       </div>
       <span v-if="logs.length" class="log-count">{{ logs.length }} / {{ totalLogsAnalyzed }}</span>
+    </div>
+
+    <div v-if="worstLogs.length" class="worst-section">
+      <div class="worst-heading">
+        <h4>Partidas para revisar</h4>
+        <span>Menores resultados por {{ rankingLabel }}</span>
+      </div>
+      <NuxtLink v-for="log in worstLogs" :key="`worst-${log.id}`" :to="`/log/${log.id}`" class="worst-log">
+        <span><strong>{{ log.map ?? `Log ${log.id}` }}</strong> · {{ formatDate(log.timestamp) }}</span>
+        <span>{{ scoreLabel(log) }}</span>
+      </NuxtLink>
     </div>
 
     <div v-if="!logs.length" class="empty-best">
@@ -39,6 +50,10 @@
             <span class="info-label">Data</span>
             <span class="info-value">{{ formatDate(log.timestamp) }}</span>
           </span>
+          <span v-if="log.format" class="info-item">
+            <span class="info-label">Formato</span>
+            <span class="info-value">{{ log.format }}</span>
+          </span>
         </div>
 
         <div class="best-log-stats">
@@ -70,18 +85,26 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { PlayerLogReference } from '~~/features/player/types'
 
 const props = defineProps<{
   logs: PlayerLogReference[]
+  worstLogs?: PlayerLogReference[]
   totalLogsAnalyzed?: number
+  totalLogs?: number
+  rankingLabel?: string
 }>()
+
+const analyzedLogs = computed(() => props.totalLogsAnalyzed ?? props.logs.length)
+const totalLogs = computed(() => props.totalLogs ?? analyzedLogs.value)
+const rankingLabel = computed(() => props.rankingLabel ?? 'score')
 
 const formatDate = (value?: string) => value ? new Date(value).toLocaleDateString('pt-BR') : '?'
 const formatNumber = (value?: number) => new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 }).format(value ?? 0)
 
 const scoreLabel = (log: { score?: number; kills?: number; damage?: number; heals?: number }) => {
-  const score = log.score ?? ((log.kills ?? 0) * 2 + (log.damage ?? 0) / 25 + (log.heals ?? 0) / 18)
+  const score = log.classMetric ?? log.score ?? ((log.kills ?? 0) * 2 + (log.damage ?? 0) / 25 + (log.heals ?? 0) / 18)
   return `${score.toFixed(0)} pts`
 }
 </script>
@@ -142,6 +165,14 @@ const scoreLabel = (log: { score?: number; kills?: number; damage?: number; heal
   color: var(--text-soft);
   font-size: 0.95rem;
 }
+.worst-section { margin-top: var(--space-lg); padding-top: var(--space-md); border-top: 1px solid rgba(255, 255, 255, 0.08); }
+.worst-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 0.65rem; }
+.worst-heading h4 { margin: 0; color: var(--text); font-size: 0.95rem; }
+.worst-heading span { color: var(--text-soft); font-size: 0.75rem; }
+.worst-log { display: flex; justify-content: space-between; gap: 1rem; padding: 0.55rem 0; border-top: 1px solid rgba(255, 255, 255, 0.05); color: var(--text-soft); font-size: 0.8rem; text-decoration: none; }
+.worst-log strong { color: var(--text); }
+.worst-log > span:last-child { color: #f7c57e; white-space: nowrap; }
+.worst-log:hover strong { color: var(--accent-soft); }
 
 .best-logs-grid {
   display: grid;

@@ -58,8 +58,12 @@
       <section class="profile-section profile-section--highlights">
         <div class="section-grid section-grid--two">
           <HighlightsPanel :overview="filteredOverview" :class-stats="filteredClassStats" :recent-logs="visibleLogs" />
-          <TrendAnalysisPanel :recent-logs="visibleLogs" />
+          <TrendAnalysisPanel :recent-logs="visibleLogs" :analyzed-logs="player?.logsAnalyzed ?? totalRecentLogs" :total-logs="player?.totalLogs ?? totalRecentLogs" />
         </div>
+      </section>
+
+      <section class="profile-section profile-section--map-breakdown">
+        <MapBreakdownPanel :logs="visibleLogs" :main-class-name="player?.mainClass?.className" :analyzed-logs="player?.logsAnalyzed ?? totalRecentLogs" :total-logs="player?.totalLogs ?? totalRecentLogs" />
       </section>
 
       <section class="profile-section profile-section--charts">
@@ -74,7 +78,7 @@
       </section>
 
       <section class="profile-section profile-section--best-logs">
-        <BestLogsPanel :logs="bestLogs" :total-logs-analyzed="totalRecentLogs" />
+        <BestLogsPanel :logs="bestLogs" :worst-logs="worstLogs" :total-logs-analyzed="player?.logsAnalyzed ?? totalRecentLogs" :total-logs="player?.totalLogs ?? totalRecentLogs" :ranking-label="classMetricLabel" />
       </section>
 
       <section class="profile-section profile-section--pickup">
@@ -136,6 +140,7 @@ import TrendAnalysisPanel from '~~/features/player/components/TrendAnalysisPanel
 import ExecutiveSummary from '~~/features/player/components/ExecutiveSummary.vue'
 import BrTf2PickupMatches from '~~/features/player/components/BrTf2PickupMatches.vue'
 import MainClassPanel from '~~/features/player/components/MainClassPanel.vue'
+import MapBreakdownPanel from '~~/features/player/components/MapBreakdownPanel.vue'
 
 // `useRoute`, `useAsyncData`, `$fetch` are auto-imported by Nuxt.
 
@@ -308,11 +313,16 @@ const healingTrendSeries = computed(() => {
   }))
 })
 
-const bestLogs = computed(() => {
-  return [...visibleLogs.value]
-    .sort((left, right) => (right.score ?? 0) - (left.score ?? 0))
-    .slice(0, 5)
-})
+const classMetricLabel = computed(() => player.value?.mainClass?.className.toLowerCase() === 'medic' ? 'cura/partida' : 'damage/partida')
+const classMetricValue = (log: typeof visibleLogs.value[number]) =>
+  player.value?.mainClass?.className.toLowerCase() === 'medic' ? (log.heals ?? 0) : (log.damage ?? 0)
+const rankedLogs = computed(() => visibleLogs.value.map((log) => ({
+  ...log,
+  classMetric: classMetricValue(log),
+  classMetricLabel: classMetricLabel.value
+})))
+const bestLogs = computed(() => [...rankedLogs.value].sort((left, right) => (right.classMetric ?? 0) - (left.classMetric ?? 0)).slice(0, 5))
+const worstLogs = computed(() => [...rankedLogs.value].sort((left, right) => (left.classMetric ?? 0) - (right.classMetric ?? 0)).slice(0, 3))
 
 const formatDate = (value?: string) => value ? new Date(value).toLocaleDateString() : 'Date unavailable'
 const formatNumber = (value?: number) => new Intl.NumberFormat('en-US').format(value ?? 0)

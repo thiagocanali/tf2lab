@@ -3,6 +3,7 @@ export interface PlayerLogReference {
   source?: 'logs.tf' | 'trends.tf' | 'both'
   title?: string
   map?: string
+  format?: string
   timestamp?: string
   result?: string
   kills?: number
@@ -11,6 +12,8 @@ export interface PlayerLogReference {
   heals?: number
   kd?: number
   score?: number
+  classMetric?: number
+  classMetricLabel?: string
 }
 
 export interface BrTf2PickupMatch {

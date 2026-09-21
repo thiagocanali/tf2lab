@@ -160,6 +160,18 @@ function summaryTimestamp(summary: any): number {
   return Number.isFinite(timestamp) ? timestamp : 0
 }
 
+function logFormat(summary: any, log: any): string | undefined {
+  const explicit = summary?.format ?? log.info?.format
+  const text = [explicit, summary?.title, log.info?.title, summary?.league, log.info?.league]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
+
+  if (/highlander|\bhl\b/.test(text)) return 'HL'
+  if (/6v6|\b6s\b|sixes|sixvsix/.test(text)) return '6s'
+  return typeof explicit === 'string' && explicit.trim() ? explicit.trim() : undefined
+}
+
 async function fetchLogDetails(logsTfUrl: string, summaries: any[], budgetMs: number) {
   const details = new Array<any | null>(summaries.length)
   let nextIndex = 0
@@ -321,6 +333,7 @@ export default defineEventHandler(async (event) => {
           source: summary?.source ?? 'logs.tf',
           title: log.info?.title ?? `Log ${log.id}`,
           map: log.info?.map,
+          format: logFormat(summary, log),
           timestamp: log.info?.date ? new Date(log.info.date * 1000).toISOString() : undefined,
           result,
           kills,

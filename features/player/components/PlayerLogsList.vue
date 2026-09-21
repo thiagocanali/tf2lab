@@ -41,7 +41,7 @@
       <li v-for="log in logs" :key="log.id">
         <div class="log-copy">
           <strong>{{ log.title ?? log.id }}</strong>
-          <div class="details">{{ log.map ?? 'Unknown map' }} • {{ date(log.timestamp) }}</div>
+          <div class="details">{{ log.map ?? 'Unknown map' }}<span v-if="log.format"> · {{ log.format }}</span> • {{ date(log.timestamp) }}</div>
           <div class="performance">{{ log.kills ?? 0 }} K · {{ log.deaths ?? 0 }} D · {{ number(log.damage) }} dmg</div>
         </div>
         <NuxtLink class="log-link" :to="`/log/${log.id}`" :aria-label="`Open log ${log.id}`">Open log →</NuxtLink>
