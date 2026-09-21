@@ -4,9 +4,9 @@ const STEAM64_BASE = '76561197960265728'
 const ANALYZED_LOG_LIMIT = 10
 const MAX_PLAYER_LOG_LIMIT = 10000
 const LOGS_TF_MAX_PAGE_SIZE = 10000
-const LOG_DETAIL_CONCURRENCY = 6
-const LOG_DETAIL_ATTEMPTS = 2
-const LOG_DETAIL_TIMEOUT_MS = 4000
+const LOG_DETAIL_CONCURRENCY = 10
+const LOG_DETAIL_ATTEMPTS = 3
+const LOG_DETAIL_TIMEOUT_MS = 2500
 const LOG_DETAIL_RETRY_DELAY_MS = 150
 const LOG_DETAIL_BUDGET_MS = 20000
 const TRENDS_TF_TIMEOUT_MS = 3000
@@ -137,7 +137,8 @@ function fetchLogDetail(logsTfUrl: string, summary: any): Promise<any | null> {
         return response?.success === false ? null : { ...response, id: logId }
       } catch {
         if (attempt < LOG_DETAIL_ATTEMPTS - 1) {
-          await new Promise((resolve) => setTimeout(resolve, LOG_DETAIL_RETRY_DELAY_MS))
+          const delay = Math.min(1000, LOG_DETAIL_RETRY_DELAY_MS * (2 ** attempt))
+          await new Promise((resolve) => setTimeout(resolve, delay))
         }
       }
     }
@@ -150,6 +151,13 @@ function fetchLogDetail(logsTfUrl: string, summary: any): Promise<any | null> {
 
   logDetailCache.set(cacheKey, request)
   return request
+}
+
+function summaryTimestamp(summary: any): number {
+  const value = summary.time ?? summary.date ?? summary.timestamp
+  if (typeof value === 'number') return value < 10_000_000_000 ? value * 1000 : value
+  const timestamp = Date.parse(String(value ?? ''))
+  return Number.isFinite(timestamp) ? timestamp : 0
 }
 
 async function fetchLogDetails(logsTfUrl: string, summaries: any[], budgetMs: number) {
@@ -244,6 +252,7 @@ export default defineEventHandler(async (event) => {
       .filter((log: any) => !logsById.has(String(log.id)))
       .map((log: any) => ({ ...log, source: 'trends.tf' }))
     const summaries = [...logsTfSummaries.map((log: any) => ({ ...log, source: 'logs.tf' })), ...trendsOnlySummaries]
+      .sort((left: any, right: any) => summaryTimestamp(right) - summaryTimestamp(left))
       .slice(0, safeLimit)
     const totalLogs = logsTfResultTotal(logsTfData.total, trendsTfData.total, logsTfSummaries.length, trendsTfSummaries.length)
     
