@@ -71,7 +71,7 @@
           <p>O TF2Lab organiza o caminho. Estas ferramentas continuam sendo parte essencial da cena.</p>
         </div>
         <div class="resource-links">
-          <a v-for="resource in resources" :key="resource.name" :href="resource.url" target="_blank" rel="noopener noreferrer" class="resource-link">
+          <a v-for="resource in resources" :key="resource.name" :href="resource.url" target="_blank" rel="noopener noreferrer" class="resource-link" :class="{ 'resource-link--featured': resource.featured }">
             <span><strong>{{ resource.name }}</strong><small>{{ resource.description }}</small></span>
             <span aria-hidden="true">↗</span>
           </a>
@@ -121,7 +121,8 @@ const classes = [
 const resources = [
   { name: 'logs.tf', description: 'Estatísticas detalhadas de partidas', url: 'https://logs.tf' },
   { name: 'demos.tf', description: 'Demos e histórico de partidas', url: 'https://demos.tf' },
-  { name: 'trends.tf', description: 'Tendências e histórico ampliado', url: 'https://trends.tf' }
+  { name: 'trends.tf', description: 'Tendências e histórico ampliado', url: 'https://trends.tf' },
+  { name: 'MGE.tf', description: 'Treino de aim e duelo 1v1 na South America', url: 'https://mge.tf/', featured: true }
 ]
 
 const tips = [
@@ -176,8 +177,9 @@ const tips = [
 .resources-section { margin-top: clamp(3rem, 6vw, 5rem); }
 .resource-panel { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 2rem; padding: clamp(1.5rem, 4vw, 2.5rem); border: 1px solid rgba(58, 128, 255, .2); border-radius: 1.25rem; background: linear-gradient(135deg, rgba(58, 128, 255, .1), rgba(18, 20, 32, .92) 52%); }
 .resource-panel h2 { max-width: 12ch; }.resource-panel > div > p:last-child { max-width: 28rem; margin: 1rem 0 0; color: var(--text-soft); font-size: .9rem; line-height: 1.6; }
-.resource-links { display: grid; grid-template-columns: repeat(3, 1fr); gap: .7rem; align-items: stretch; }
+.resource-links { display: grid; grid-template-columns: repeat(2, 1fr); gap: .7rem; align-items: stretch; }
 .resource-link { display: flex; min-height: 8rem; flex-direction: column; justify-content: space-between; padding: .9rem; border: 1px solid var(--border); border-radius: .75rem; background: rgba(7, 8, 13, .4); color: var(--text); text-decoration: none; transition: background .2s ease, border-color .2s ease; }.resource-link:hover { border-color: rgba(58, 128, 255, .5); background: rgba(58, 128, 255, .12); }.resource-link > span:last-child { align-self: end; color: var(--tf2-blu); font-size: 1.1rem; }.resource-link strong, .resource-link small { display: block; }.resource-link strong { font-size: .9rem; }.resource-link small { margin-top: .35rem; color: var(--text-muted); font-size: .72rem; line-height: 1.4; }
+.resource-link--featured { border-color: rgba(255, 155, 51, .42); background: linear-gradient(145deg, rgba(255, 155, 51, .16), rgba(7, 8, 13, .48)); }.resource-link--featured:hover { border-color: rgba(255, 155, 51, .72); background: rgba(255, 155, 51, .2); }.resource-link--featured > span:last-child { color: var(--tf2-orange); }
 .tips-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: .8rem; }.tip-card { display: flex; gap: 1rem; padding: 1.15rem; border-left: 2px solid var(--tf2-red); background: rgba(255, 255, 255, .035); }.tip-card h3 { margin: 0 0 .35rem; }.tip-index { padding-top: .1rem; color: var(--accent-soft); }
 @media (max-width: 820px) { .academy-hero, .resource-panel { grid-template-columns: 1fr; }.hero-note { max-width: 28rem; }.section-intro { text-align: left; }.section-heading { align-items: start; flex-direction: column; gap: .75rem; }.class-grid { grid-template-columns: repeat(2, 1fr); }.resource-links { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 560px) { .academy-hero { padding: 2rem 1.25rem; }.academy-hero h1 { font-size: clamp(2.8rem, 15vw, 4.4rem); }.steps-grid, .class-grid, .resource-links, .tips-grid { grid-template-columns: 1fr; }.step-card { min-height: auto; }.resource-link { min-height: auto; flex-direction: row; align-items: center; }.resource-link > span:last-child { align-self: auto; }.section-count { margin-top: -.35rem; } }
