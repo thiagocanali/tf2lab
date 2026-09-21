@@ -12,39 +12,44 @@
     <div v-else-if="hasProfileData" class="profile-content">
       <PlayerHeader :player="player" />
 
-      <section class="profile-section profile-section--primary">
-        <div class="section-grid section-grid--two">
-          <ExecutiveSummary :overview="filteredOverview" :total-logs="totalRecentLogs" />
-          <PlayerStatsOverview :overview="filteredOverview" />
-        </div>
-      </section>
-
       <section class="profile-section profile-section--main-class">
         <MainClassPanel :main-class="player?.mainClass" :class-stat="mainClassStat" :analyzed-logs="player?.logsAnalyzed ?? totalRecentLogs" />
       </section>
 
-      <section class="profile-section profile-section--controls">
-        <div class="section-heading">
-          <div>
-            <p class="eyebrow">Janela de análise</p>
-            <h2>{{ periodLabel }}</h2>
-          </div>
-          <div class="period-selector" role="tablist" aria-label="Período de análise">
-            <button
-              v-for="option in periodOptions"
-              :key="option"
-              type="button"
-              class="period-button"
-              :class="{ active: selectedPeriod === option }"
-              @click="selectLogLimit(option)"
-            >
-              {{ option === 'all' ? 'Tudo' : `${option}` }}
-            </button>
-          </div>
+      <section class="profile-section profile-section--primary">
+        <div class="section-grid section-grid--two">
+          <ExecutiveSummary :overview="filteredOverview" :total-logs="player?.logsAnalyzed ?? totalRecentLogs" />
+          <PlayerStatsOverview :overview="filteredOverview" />
         </div>
+      </section>
 
-        <div v-if="!hasEnoughLogsForAnalysis" class="analysis-warning">
-          A análise de evolução precisa de pelo menos {{ minimumLogsForAnalysis }} logs para ser confiável.
+      <section class="profile-section profile-section--metrics">
+        <div class="section-grid section-grid--two">
+          <PlayerClassStats :classes="filteredClassStats" />
+          <div class="metrics-controls">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Janela de análise</p>
+                <h2>{{ periodLabel }}</h2>
+              </div>
+              <div class="period-selector" role="tablist" aria-label="Período de análise">
+                <button
+                  v-for="option in periodOptions"
+                  :key="option"
+                  type="button"
+                  class="period-button"
+                  :class="{ active: selectedPeriod === option }"
+                  @click="selectLogLimit(option)"
+                >
+                  {{ option === 'all' ? 'Tudo' : `${option}` }}
+                </button>
+              </div>
+            </div>
+
+            <div v-if="!hasEnoughLogsForAnalysis" class="analysis-warning">
+              A análise de evolução precisa de pelo menos {{ minimumLogsForAnalysis }} logs para ser confiável.
+            </div>
+          </div>
         </div>
       </section>
 
@@ -81,12 +86,8 @@
         <BestLogsPanel :logs="bestLogs" :worst-logs="worstLogs" :total-logs-analyzed="player?.logsAnalyzed ?? totalRecentLogs" :total-logs="player?.totalLogs ?? totalRecentLogs" :ranking-label="classMetricLabel" />
       </section>
 
-      <section class="profile-section profile-section--pickup">
-        <BrTf2PickupMatches :matches="brTf2PickupMatches" :pending="brTf2PickupPending" />
-      </section>
-
       <section class="profile-section profile-section--logs-stats">
-        <div class="content-grid">
+        <div class="content-grid content-grid--recent">
           <PlayerLogsList
             :logs="visibleLogs"
             :limit="selectedLogLimit"
@@ -99,8 +100,11 @@
             :trends-tf-available="player?.trendsTfAvailable"
             @update:limit="selectedLogLimit = $event"
           />
-          <PlayerClassStats :classes="filteredClassStats" />
         </div>
+      </section>
+
+      <section class="profile-section profile-section--pickup">
+        <BrTf2PickupMatches :matches="brTf2PickupMatches" :pending="brTf2PickupPending" />
       </section>
     </div>
 
@@ -403,6 +407,22 @@ const breadcrumbs = computed(() => [
   border-top-color: rgba(255, 155, 51, 0.35);
 }
 
+.profile-section--metrics .section-grid {
+  align-items: stretch;
+}
+
+.metrics-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  min-width: 0;
+  padding: var(--space-md);
+  border: 1px solid var(--profile-card-border);
+  border-radius: var(--profile-card-radius);
+  background: var(--profile-card-background);
+  box-shadow: var(--profile-card-shadow);
+}
+
 .profile-section--charts {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -515,6 +535,10 @@ const breadcrumbs = computed(() => [
   display: grid;
   grid-template-columns: minmax(0, 1.5fr) minmax(18rem, 1fr);
   gap: var(--profile-card-gap);
+}
+
+.content-grid--recent {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 :deep(.chart-card),
