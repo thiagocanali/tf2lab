@@ -91,12 +91,16 @@ import { computed, ref } from 'vue'
 interface Profile { name: string; steamId: string; overview?: Record<string, number> }
 interface Metric { key: string; label: string; decimals?: number }
 
-const playerAId = ref('')
-const playerBId = ref('')
+const route = useRoute()
+const router = useRouter()
+const initialQuery = route.query
+const playerAId = ref(typeof initialQuery.a === 'string' ? initialQuery.a : '')
+const playerBId = ref(typeof initialQuery.b === 'string' ? initialQuery.b : '')
 const profiles = ref<Profile[]>([])
 const loading = ref(false)
 const windowOptions = [10, 25, 50]
-const comparisonWindow = ref(25)
+const queryWindow = Number(initialQuery.window)
+const comparisonWindow = ref(windowOptions.includes(queryWindow) ? queryWindow : 25)
 const formError = ref('')
 const isValidSteamId = (id: string) => /^7656119\d{10}$/.test(id)
 const canCompare = computed(() => isValidSteamId(playerAId.value) && isValidSteamId(playerBId.value) && playerAId.value !== playerBId.value)
@@ -133,6 +137,9 @@ function swapPlayers() {
 function clearComparison() {
   profiles.value = []
   formError.value = ''
+  playerAId.value = ''
+  playerBId.value = ''
+  void router.replace({ query: {} })
 }
 
 async function comparePlayers() {
@@ -148,6 +155,7 @@ async function comparePlayers() {
   try {
     const response = await Promise.all([playerAId.value, playerBId.value].map((id) => $fetch<Profile>(`/api/player/${encodeURIComponent(id)}`, { query: { limit: comparisonWindow.value } })))
     profiles.value = response
+    await router.replace({ query: { a: playerAId.value, b: playerBId.value, window: String(comparisonWindow.value) } })
   } catch { formError.value = 'Não foi possível carregar um dos perfis. Verifique os SteamID64 e tente novamente.' }
   finally { loading.value = false }
 }
