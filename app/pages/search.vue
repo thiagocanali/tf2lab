@@ -218,6 +218,7 @@ const hasSearched = ref<boolean>(false)
 const lastQuery = ref<string>('')
 const queryType = ref<string>('')
 const searchError = ref(false)
+let searchRequestId = 0
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / PER_PAGE)))
 
@@ -251,6 +252,7 @@ async function runSearch(term: string, targetPage: number = DEFAULT_PAGE) {
   const trimmed = term.trim()
   if (!trimmed) return
 
+  const requestId = ++searchRequestId
   loading.value = true
   hasSearched.value = true
   lastQuery.value = trimmed
@@ -258,18 +260,22 @@ async function runSearch(term: string, targetPage: number = DEFAULT_PAGE) {
 
   try {
     const res = await service.search(trimmed, targetPage, PER_PAGE)
+    if (requestId !== searchRequestId) return
+
     results.value = (res?.results ?? res?.data ?? []) as any[]
     players.value = (res?.players ?? []) as any[]
     queryType.value = res?.queryType ?? ''
     page.value = res?.page ?? targetPage
     total.value = res?.total ?? results.value.length
-  } catch (err) {
+  } catch {
+    if (requestId !== searchRequestId) return
+
     results.value = []
     players.value = []
     total.value = 0
     searchError.value = true
   } finally {
-    loading.value = false
+    if (requestId === searchRequestId) loading.value = false
   }
 }
 
