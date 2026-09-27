@@ -15,11 +15,13 @@
       <span class="search-icon" aria-hidden="true">⌕</span>
       <input
         id="search-input"
+        ref="searchInput"
         v-model="query"
         type="search"
         placeholder="SteamID, player, or log ID"
         autocomplete="off"
         enterkeyhint="search"
+        aria-describedby="search-help"
       >
       <button
         v-if="query"
@@ -34,6 +36,9 @@
         {{ loading ? 'Searching...' : 'Search' }}
       </button>
     </form>
+    <p id="search-help" class="search-help">
+      Pressione <kbd>/</kbd> para focar a busca e <kbd>Esc</kbd> para limpar.
+    </p>
 
     <!-- Loading skeletons -->
     <div v-if="loading" class="results-grid" aria-busy="true" aria-live="polite">
@@ -205,7 +210,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import useLogsService from '~~/features/analytics/services/logsService'
 import type { PlayerLogReference } from '~~/features/player/types'
 
@@ -218,6 +223,7 @@ const route = useRoute()
 const router = useRouter()
 const service = useLogsService()
 
+const searchInput = ref<HTMLInputElement | null>(null)
 const query = ref<string>(typeof route.query.q === 'string' ? route.query.q : '')
 const results = ref<any[]>([])
 const players = ref<any[]>([])
@@ -341,8 +347,27 @@ watch(
   }
 )
 
+function handleSearchShortcut(event: KeyboardEvent) {
+  const target = event.target as HTMLElement | null
+  const isTyping = target?.matches('input, textarea, select, [contenteditable="true"]')
+
+  if (event.key === '/' && !isTyping) {
+    event.preventDefault()
+    searchInput.value?.focus()
+  }
+
+  if (event.key === 'Escape' && document.activeElement === searchInput.value && query.value) {
+    clearSearch()
+  }
+}
+
 onMounted(() => {
+  window.addEventListener('keydown', handleSearchShortcut)
   if (query.value.trim()) runSearch(query.value, page.value)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleSearchShortcut)
 })
 </script>
 
@@ -378,6 +403,23 @@ onMounted(() => {
   color: var(--text-soft);
   font-size: 1rem;
   max-width: 36rem;
+}
+.search-help {
+  margin: -0.65rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+.search-help kbd {
+  display: inline-flex;
+  min-width: 1.35rem;
+  justify-content: center;
+  padding: 0.08rem 0.3rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-bottom-width: 2px;
+  border-radius: 0.3rem;
+  color: var(--text-soft);
+  font: inherit;
+  font-weight: 700;
 }
 
 .search-form {
