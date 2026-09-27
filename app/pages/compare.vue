@@ -11,12 +11,12 @@
     <form class="compare-form" @submit.prevent="comparePlayers">
       <div class="player-input">
         <label for="player-a">Player A</label>
-        <input id="player-a" v-model.trim="playerAId" inputmode="numeric" placeholder="SteamID64" autocomplete="off">
+        <input id="player-a" v-model.trim="playerAId" inputmode="numeric" pattern="[0-9]{17}" maxlength="17" placeholder="SteamID64" autocomplete="off" :aria-invalid="Boolean(formError && !isValidSteamId(playerAId))">
       </div>
       <div class="versus" aria-hidden="true">VS</div>
       <div class="player-input">
         <label for="player-b">Player B</label>
-        <input id="player-b" v-model.trim="playerBId" inputmode="numeric" placeholder="SteamID64" autocomplete="off">
+        <input id="player-b" v-model.trim="playerBId" inputmode="numeric" pattern="[0-9]{17}" maxlength="17" placeholder="SteamID64" autocomplete="off" :aria-invalid="Boolean(formError && !isValidSteamId(playerBId))">
       </div>
       <button type="submit" :disabled="!canCompare || loading">{{ loading ? 'Comparando...' : 'Compare players' }}</button>
     </form>
@@ -84,7 +84,8 @@ const playerBId = ref('')
 const profiles = ref<Profile[]>([])
 const loading = ref(false)
 const formError = ref('')
-const canCompare = computed(() => playerAId.value.length > 0 && playerBId.value.length > 0 && playerAId.value !== playerBId.value)
+const isValidSteamId = (id: string) => /^7656119\d{10}$/.test(id)
+const canCompare = computed(() => isValidSteamId(playerAId.value) && isValidSteamId(playerBId.value) && playerAId.value !== playerBId.value)
 const metrics: Metric[] = [
   { key: 'matches', label: 'Matches' },
   { key: 'kdRatio', label: 'K/D', decimals: 2 },
@@ -106,7 +107,14 @@ function winnerClass(key: string, index: number) {
 }
 
 async function comparePlayers() {
-  if (!canCompare.value) { formError.value = 'Informe dois SteamID64 diferentes.'; return }
+  if (!isValidSteamId(playerAId.value) || !isValidSteamId(playerBId.value)) {
+    formError.value = 'Informe dois SteamID64 válidos com 17 dígitos.'
+    return
+  }
+  if (playerAId.value === playerBId.value) {
+    formError.value = 'Escolha dois jogadores diferentes.'
+    return
+  }
   loading.value = true; formError.value = ''; profiles.value = []
   try {
     const response = await Promise.all([playerAId.value, playerBId.value].map((id) => $fetch<Profile>(`/api/player/${encodeURIComponent(id)}`, { query: { limit: 30 } })))
