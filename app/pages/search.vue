@@ -58,7 +58,7 @@
             <div class="result-card__head">
               <div class="player-info">
                 <div class="avatar-wrapper">
-                  <img v-if="p.avatarUrl" :src="p.avatarUrl" alt="" />
+                  <img v-if="p.avatarUrl" :src="p.avatarUrl" :alt="`${p.name} avatar`" />
                   <div v-else class="avatar-fallback">{{ getInitials(p.name) }}</div>
                 </div>
                 <div>
@@ -187,9 +187,9 @@
 
     <!-- Pagination -->
     <nav v-if="!loading && totalPages > 1" class="pagination" aria-label="Pagination">
-      <button :disabled="page <= 1" @click="goToPage(page - 1)">← Previous</button>
-      <span class="pagination__label">Page {{ page }} of {{ totalPages }}</span>
-      <button :disabled="page >= totalPages" @click="goToPage(page + 1)">Next →</button>
+              <button type="button" :disabled="page <= 1" @click="goToPage(page - 1)">← Previous</button>
+              <span class="pagination__label" aria-live="polite">Page {{ page }} of {{ totalPages }}</span>
+              <button type="button" :disabled="page >= totalPages" @click="goToPage(page + 1)">Next →</button>
     </nav>
   </div>
 </template>
@@ -238,8 +238,9 @@ function formatDate(timestamp: string): string {
 }
 
 function getInitials(name: string): string {
-  const parts = name.split(' ')
-  return parts.map((part) => part[0]).slice(0, 2).join('').toUpperCase()
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  const initials = parts.map((part) => part[0]).slice(0, 2).join('').toUpperCase()
+  return initials || '?'
 }
 
 function formatNumber(num: number): string {
@@ -391,6 +392,10 @@ onMounted(() => {
 }
 .search-form button:hover:not(:disabled) { background: #ff765d; transform: translateY(-1px); }
 .search-form button:disabled { cursor: not-allowed; opacity: 0.45; }
+.search-form input:focus-visible,
+.search-form button:focus-visible,
+.pagination button:focus-visible,
+.action-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 
 .results-grid {
   display: grid;
