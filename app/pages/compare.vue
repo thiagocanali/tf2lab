@@ -19,6 +19,7 @@
         <input id="player-b" v-model.trim="playerBId" inputmode="numeric" pattern="[0-9]{17}" maxlength="17" placeholder="SteamID64" autocomplete="off" :aria-invalid="Boolean(formError && !isValidSteamId(playerBId))">
       </div>
       <button type="submit" :disabled="!canCompare || loading">{{ loading ? 'Comparando...' : 'Compare players' }}</button>
+      <button v-if="profiles.length === 2" type="button" class="clear-button" @click="clearComparison">Limpar</button>
     </form>
 
     <p v-if="formError" class="form-error" role="alert">{{ formError }}</p>
@@ -44,6 +45,11 @@
           </div>
           <NuxtLink class="action-link" :to="`/player/${profile.steamId}`">View full profile →</NuxtLink>
         </article>
+      </div>
+
+      <div class="comparison-summary" aria-label="Resumo da comparação">
+        <p class="eyebrow">Resumo rápido</p>
+        <p><strong>{{ profiles[0].name }}</strong> lidera em <strong>{{ winningMetrics(0) }}</strong>, enquanto <strong>{{ profiles[1].name }}</strong> lidera em <strong>{{ winningMetrics(1) }}</strong>.</p>
       </div>
 
       <div class="metrics-table-wrap">
@@ -106,6 +112,15 @@ function winnerClass(key: string, index: number) {
   return wins ? 'is-winner' : ''
 }
 
+function winningMetrics(index: number) {
+  return metrics.filter((metric) => winnerClass(metric.key, index) === 'is-winner').map((metric) => metric.label).join(', ') || 'nenhum indicador'
+}
+
+function clearComparison() {
+  profiles.value = []
+  formError.value = ''
+}
+
 async function comparePlayers() {
   if (!isValidSteamId(playerAId.value) || !isValidSteamId(playerBId.value)) {
     formError.value = 'Informe dois SteamID64 válidos com 17 dígitos.'
@@ -135,6 +150,10 @@ async function comparePlayers() {
 .compare-form button { padding: .85rem 1.1rem; border: 0; border-radius: .65rem; background: var(--tf2-red); color: #fff; font-weight: 700; cursor: pointer; } .compare-form button:disabled { opacity: .5; cursor: not-allowed; }
 .versus { padding-bottom: .85rem; color: var(--tf2-red); font-weight: 800; font-size: .8rem; }
 .form-error { margin: 1rem 0; color: #fca5a5; }
+.clear-button { padding: .85rem 1.1rem; border: 1px solid var(--border); border-radius: .65rem; background: transparent; color: var(--text-muted); font-weight: 700; cursor: pointer; }
+.clear-button:hover { color: var(--text); border-color: var(--text-muted); }
+.comparison-summary { margin-top: 2rem; padding: 1.25rem 1.5rem; border-left: 3px solid var(--tf2-red); border-radius: 0 .75rem .75rem 0; background: rgba(255,79,60,.08); }
+.comparison-summary p:last-child { margin: .35rem 0 0; color: var(--text-muted); }
 .comparison-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-top: 2rem; }
 .comparison-card { display: flex; flex-direction: column; justify-content: space-between; gap: 1.5rem; padding: 1.5rem; border: 1px solid var(--border); border-radius: 1rem; background: var(--surface); }
 .player-heading { display: flex; align-items: center; gap: 1rem; } .player-heading h2 { margin: .25rem 0; } .player-heading span { color: var(--text-muted); font-size: .8rem; }
