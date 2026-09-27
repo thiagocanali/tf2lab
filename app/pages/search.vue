@@ -19,7 +19,17 @@
         type="search"
         placeholder="SteamID, player, or log ID"
         autocomplete="off"
+        enterkeyhint="search"
       >
+      <button
+        v-if="query"
+        type="button"
+        class="search-clear"
+        aria-label="Clear search"
+        @click="clearSearch"
+      >
+        Clear
+      </button>
       <button type="submit" :disabled="!query.trim() || loading">
         {{ loading ? 'Searching...' : 'Search' }}
       </button>
@@ -296,6 +306,18 @@ function onSubmit() {
   syncRouteQuery(term, DEFAULT_PAGE)
 }
 
+function clearSearch() {
+  query.value = ''
+  results.value = []
+  players.value = []
+  total.value = 0
+  hasSearched.value = false
+  lastQuery.value = ''
+  queryType.value = ''
+  searchError.value = false
+  syncRouteQuery('', DEFAULT_PAGE)
+}
+
 function useSuggestion(term: string) {
   query.value = term
   syncRouteQuery(term, DEFAULT_PAGE)
@@ -392,6 +414,14 @@ onMounted(() => {
 }
 .search-form button:hover:not(:disabled) { background: #ff765d; transform: translateY(-1px); }
 .search-form button:disabled { cursor: not-allowed; opacity: 0.45; }
+.search-form .search-clear {
+  padding: 0.55rem 0.7rem;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.search-form .search-clear:hover { background: rgba(255, 255, 255, 0.08); color: var(--text); transform: none; }
 .search-form input:focus-visible,
 .search-form button:focus-visible,
 .pagination button:focus-visible,
