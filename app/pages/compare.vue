@@ -13,7 +13,7 @@
         <label for="player-a">Player A</label>
         <input id="player-a" v-model.trim="playerAId" inputmode="numeric" pattern="[0-9]{17}" maxlength="17" placeholder="SteamID64" autocomplete="off" :aria-invalid="Boolean(formError && !isValidSteamId(playerAId))">
       </div>
-      <div class="versus" aria-hidden="true">VS</div>
+      <button type="button" class="swap-button" aria-label="Trocar jogadores de posição" @click="swapPlayers">↔</button>
       <div class="player-input">
         <label for="player-b">Player B</label>
         <input id="player-b" v-model.trim="playerBId" inputmode="numeric" pattern="[0-9]{17}" maxlength="17" placeholder="SteamID64" autocomplete="off" :aria-invalid="Boolean(formError && !isValidSteamId(playerBId))">
@@ -116,6 +116,12 @@ function winningMetrics(index: number) {
   return metrics.filter((metric) => winnerClass(metric.key, index) === 'is-winner').map((metric) => metric.label).join(', ') || 'nenhum indicador'
 }
 
+function swapPlayers() {
+  const currentA = playerAId.value
+  playerAId.value = playerBId.value
+  playerBId.value = currentA
+}
+
 function clearComparison() {
   profiles.value = []
   formError.value = ''
@@ -149,6 +155,8 @@ async function comparePlayers() {
 .player-input input { width: 100%; padding: .85rem 1rem; border: 1px solid var(--border); border-radius: .65rem; background: var(--surface); color: var(--text); }
 .compare-form button { padding: .85rem 1.1rem; border: 0; border-radius: .65rem; background: var(--tf2-red); color: #fff; font-weight: 700; cursor: pointer; } .compare-form button:disabled { opacity: .5; cursor: not-allowed; }
 .versus { padding-bottom: .85rem; color: var(--tf2-red); font-weight: 800; font-size: .8rem; }
+.swap-button { align-self: end; padding: .65rem .75rem; border: 1px solid var(--border); border-radius: .65rem; background: transparent; color: var(--text-muted); font-size: 1.1rem; cursor: pointer; }
+.swap-button:hover, .swap-button:focus-visible { border-color: var(--tf2-red); color: var(--tf2-red); }
 .form-error { margin: 1rem 0; color: #fca5a5; }
 .clear-button { padding: .85rem 1.1rem; border: 1px solid var(--border); border-radius: .65rem; background: transparent; color: var(--text-muted); font-weight: 700; cursor: pointer; }
 .clear-button:hover { color: var(--text); border-color: var(--text-muted); }
@@ -162,5 +170,5 @@ async function comparePlayers() {
 .metrics-table { width: 100%; border-collapse: collapse; min-width: 560px; } .metrics-table caption { padding: 1.25rem 1.25rem .5rem; text-align: left; color: var(--text); font-size: 1.15rem; font-weight: 700; } .metrics-table th, .metrics-table td { padding: .9rem 1.25rem; border-bottom: 1px solid var(--border); text-align: right; } .metrics-table th:first-child, .metrics-table td:first-child { text-align: left; } .metrics-table tbody th { color: var(--text-muted); font-weight: 500; } .metrics-table td { font-variant-numeric: tabular-nums; } .metrics-table .is-winner { color: #86efac; font-weight: 800; }
 .skeleton-card { min-height: 190px; } .skeleton-line { height: 1rem; border-radius: .35rem; background: rgba(255,255,255,.08); } .skeleton-line--xl { width: 60%; height: 2rem; } .skeleton-line--md { width: 35%; }
 .empty-state { margin-top: 2rem; }
-@media (max-width: 760px) { .compare-form { grid-template-columns: 1fr; } .versus { padding: 0; text-align: center; } .compare-form button { width: 100%; } .comparison-grid { grid-template-columns: 1fr; } }
+@media (max-width: 760px) { .compare-form { grid-template-columns: 1fr; } .versus { padding: 0; text-align: center; } .swap-button { justify-self: center; } .compare-form button { width: 100%; } .comparison-grid { grid-template-columns: 1fr; } }
 </style>
