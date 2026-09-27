@@ -292,25 +292,23 @@ function syncRouteQuery(term: string, targetPage: number) {
 function onSubmit() {
   const term = query.value.trim()
   if (!term) return
-  page.value = DEFAULT_PAGE
   syncRouteQuery(term, DEFAULT_PAGE)
-  runSearch(term, DEFAULT_PAGE)
 }
 
 function goToPage(targetPage: number) {
   if (targetPage < 1 || targetPage > totalPages.value) return
-  page.value = targetPage
   syncRouteQuery(query.value.trim(), targetPage)
-  runSearch(query.value, targetPage)
   if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 watch(
-  () => route.query.q,
-  (newQ) => {
+  () => [route.query.q, route.query.page],
+  ([newQ, newPage]) => {
     const next = typeof newQ === 'string' ? newQ : ''
-    if (next === query.value) return
-    query.value = next
+    const nextPage = Number(newPage ?? DEFAULT_PAGE)
+    page.value = Number.isFinite(nextPage) && nextPage > 0 ? nextPage : DEFAULT_PAGE
+
+    if (next !== query.value) query.value = next
     if (next.trim()) runSearch(next, page.value)
   }
 )
