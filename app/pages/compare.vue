@@ -18,6 +18,12 @@
         <label for="player-b">Player B</label>
         <input id="player-b" v-model.trim="playerBId" inputmode="numeric" pattern="[0-9]{17}" maxlength="17" placeholder="SteamID64" autocomplete="off" :aria-invalid="Boolean(formError && !isValidSteamId(playerBId))">
       </div>
+      <label class="window-input" for="comparison-window">
+        <span>Janela</span>
+        <select id="comparison-window" v-model="comparisonWindow">
+          <option v-for="option in windowOptions" :key="option" :value="option">Últimos {{ option }} jogos</option>
+        </select>
+      </label>
       <button type="submit" :disabled="!canCompare || loading">{{ loading ? 'Comparando...' : 'Compare players' }}</button>
       <button v-if="profiles.length === 2" type="button" class="clear-button" @click="clearComparison">Limpar</button>
     </form>
@@ -89,6 +95,8 @@ const playerAId = ref('')
 const playerBId = ref('')
 const profiles = ref<Profile[]>([])
 const loading = ref(false)
+const windowOptions = [10, 25, 50]
+const comparisonWindow = ref(25)
 const formError = ref('')
 const isValidSteamId = (id: string) => /^7656119\d{10}$/.test(id)
 const canCompare = computed(() => isValidSteamId(playerAId.value) && isValidSteamId(playerBId.value) && playerAId.value !== playerBId.value)
@@ -138,7 +146,7 @@ async function comparePlayers() {
   }
   loading.value = true; formError.value = ''; profiles.value = []
   try {
-    const response = await Promise.all([playerAId.value, playerBId.value].map((id) => $fetch<Profile>(`/api/player/${encodeURIComponent(id)}`, { query: { limit: 30 } })))
+    const response = await Promise.all([playerAId.value, playerBId.value].map((id) => $fetch<Profile>(`/api/player/${encodeURIComponent(id)}`, { query: { limit: comparisonWindow.value } })))
     profiles.value = response
   } catch { formError.value = 'Não foi possível carregar um dos perfis. Verifique os SteamID64 e tente novamente.' }
   finally { loading.value = false }
@@ -153,6 +161,8 @@ async function comparePlayers() {
 .compare-form { display: grid; grid-template-columns: 1fr auto 1fr auto; align-items: end; gap: 1rem; padding: 1.25rem; border: 1px solid var(--border); border-radius: 1rem; background: rgba(255,255,255,.03); }
 .player-input { display: grid; gap: .5rem; } .player-input label { color: var(--text-soft); font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
 .player-input input { width: 100%; padding: .85rem 1rem; border: 1px solid var(--border); border-radius: .65rem; background: var(--surface); color: var(--text); }
+.window-input { display: grid; gap: .5rem; color: var(--text-soft); font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+.window-input select { min-width: 9rem; padding: .85rem .75rem; border: 1px solid var(--border); border-radius: .65rem; background: var(--surface); color: var(--text); font: inherit; text-transform: none; letter-spacing: normal; }
 .compare-form button { padding: .85rem 1.1rem; border: 0; border-radius: .65rem; background: var(--tf2-red); color: #fff; font-weight: 700; cursor: pointer; } .compare-form button:disabled { opacity: .5; cursor: not-allowed; }
 .versus { padding-bottom: .85rem; color: var(--tf2-red); font-weight: 800; font-size: .8rem; }
 .swap-button { align-self: end; padding: .65rem .75rem; border: 1px solid var(--border); border-radius: .65rem; background: transparent; color: var(--text-muted); font-size: 1.1rem; cursor: pointer; }
@@ -170,5 +180,6 @@ async function comparePlayers() {
 .metrics-table { width: 100%; border-collapse: collapse; min-width: 560px; } .metrics-table caption { padding: 1.25rem 1.25rem .5rem; text-align: left; color: var(--text); font-size: 1.15rem; font-weight: 700; } .metrics-table th, .metrics-table td { padding: .9rem 1.25rem; border-bottom: 1px solid var(--border); text-align: right; } .metrics-table th:first-child, .metrics-table td:first-child { text-align: left; } .metrics-table tbody th { color: var(--text-muted); font-weight: 500; } .metrics-table td { font-variant-numeric: tabular-nums; } .metrics-table .is-winner { color: #86efac; font-weight: 800; }
 .skeleton-card { min-height: 190px; } .skeleton-line { height: 1rem; border-radius: .35rem; background: rgba(255,255,255,.08); } .skeleton-line--xl { width: 60%; height: 2rem; } .skeleton-line--md { width: 35%; }
 .empty-state { margin-top: 2rem; }
-@media (max-width: 760px) { .compare-form { grid-template-columns: 1fr; } .versus { padding: 0; text-align: center; } .swap-button { justify-self: center; } .compare-form button { width: 100%; } .comparison-grid { grid-template-columns: 1fr; } }
+@media (max-width: 980px) { .compare-form { grid-template-columns: 1fr 1fr; } .swap-button { align-self: end; } .window-input { grid-column: span 2; } }
+@media (max-width: 760px) { .compare-form { grid-template-columns: 1fr; } .versus { padding: 0; text-align: center; } .swap-button { justify-self: center; } .window-input { grid-column: auto; } .window-input select, .compare-form button { width: 100%; } .comparison-grid { grid-template-columns: 1fr; } }
 </style>
