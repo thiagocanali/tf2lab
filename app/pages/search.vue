@@ -162,11 +162,11 @@
       </p>
       <div class="empty-state__suggestions">
         <p class="suggestions-label">Try searching for:</p>
-        <ul>
-          <li>SteamID64: <code>76561198000000001</code></li>
-          <li>Player name: <code>saxton</code></li>
-          <li>Log ID: <code>3690111</code></li>
-        </ul>
+        <div class="suggestion-list">
+          <button type="button" @click="useSuggestion('76561198000000001')">SteamID64: <code>76561198000000001</code></button>
+          <button type="button" @click="useSuggestion('saxton')">Player name: <code>saxton</code></button>
+          <button type="button" @click="useSuggestion('3690111')">Log ID: <code>3690111</code></button>
+        </div>
       </div>
     </section>
 
@@ -177,11 +177,11 @@
       <p>Enter a SteamID64, player name, or logs.tf log ID above to start.</p>
       <div class="empty-state__suggestions">
         <p class="suggestions-label">Examples:</p>
-        <ul>
-          <li>SteamID64: <code>76561198000000001</code></li>
-          <li>Player name: <code>saxton</code></li>
-          <li>Log ID: <code>3690111</code></li>
-        </ul>
+        <div class="suggestion-list">
+          <button type="button" @click="useSuggestion('76561198000000001')">SteamID64: <code>76561198000000001</code></button>
+          <button type="button" @click="useSuggestion('saxton')">Player name: <code>saxton</code></button>
+          <button type="button" @click="useSuggestion('3690111')">Log ID: <code>3690111</code></button>
+        </div>
       </div>
     </section>
 
@@ -292,6 +292,11 @@ function syncRouteQuery(term: string, targetPage: number) {
 function onSubmit() {
   const term = query.value.trim()
   if (!term) return
+  syncRouteQuery(term, DEFAULT_PAGE)
+}
+
+function useSuggestion(term: string) {
+  query.value = term
   syncRouteQuery(term, DEFAULT_PAGE)
 }
 
@@ -584,25 +589,31 @@ onMounted(() => {
   font-size: 0.85rem;
   font-weight: 600;
 }
-.empty-state__suggestions ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+.suggestion-list {
   display: grid;
   gap: 0.5rem;
 }
-.empty-state__suggestions li {
+.suggestion-list button {
+  width: 100%;
   padding: 0.6rem 0.9rem;
-  background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 8px;
-  font-size: 0.9rem;
+  background: rgba(255, 255, 255, 0.03);
   color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
   transition: background 0.2s, border-color 0.2s;
 }
-.empty-state__suggestions li:hover {
+.suggestion-list button:hover,
+.suggestion-list button:focus-visible {
   background: rgba(255, 79, 60, 0.08);
   border-color: rgba(255, 79, 60, 0.2);
+}
+.suggestion-list button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 .empty-state__suggestions code {
   font-family: var(--font-family-mono);
