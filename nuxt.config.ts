@@ -17,5 +17,16 @@ export default defineNuxtConfig({
       logsTfUrl: process.env.LOGS_TF_URL || 'https://logs.tf/api/v1/log',
       trendsTfUrl: process.env.TRENDS_TF_URL || 'https://trends.tf/api/v1/logs'
     }
+  },
+
+  routeRules: {
+    '/**': {
+      headers: {
+        'X-Content-Type-Options': 'nosniff',
+        'Referrer-Policy': 'strict-origin-when-cross-origin',
+        'Strict-Transport-Security': 'max-age=63072000',
+        'Permissions-Policy': 'camera=(), microphone=(), geolocation=()'
+      }
+    }
   }
 })

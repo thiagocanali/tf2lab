@@ -244,9 +244,11 @@ function detectQueryType(query: string): 'steamid' | 'logid' | 'playername' | 'u
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
-  const query = String(body?.query ?? '')
-  const page = Number(body?.page ?? 1)
-  const perPage = Number(body?.perPage ?? 10)
+  const query = String(body?.query ?? '').trim().slice(0, 100)
+  const requestedPage = Number(body?.page ?? 1)
+  const requestedPerPage = Number(body?.perPage ?? 10)
+  const page = Number.isInteger(requestedPage) ? Math.min(Math.max(1, requestedPage), 1000) : 1
+  const perPage = Number.isInteger(requestedPerPage) ? Math.min(Math.max(1, requestedPerPage), 100) : 10
 
   const cacheKey = `${query}|${page}|${perPage}`
   const now = Date.now()
@@ -336,7 +338,7 @@ export default defineEventHandler(async (event) => {
     
     cache.set(cacheKey, { ts: now, data: payload })
     return payload
-  } catch (err) {
-    return { error: String(err), queryType, query, results: [], players: [], page, perPage, total: 0 }
+  } catch {
+    return { error: 'Search service unavailable', queryType, query, results: [], players: [], page, perPage, total: 0 }
   }
 })
