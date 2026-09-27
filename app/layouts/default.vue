@@ -25,6 +25,9 @@
           <NuxtLink to="/search" active-class="active">
             <span>Search</span>
           </NuxtLink>
+          <NuxtLink to="/compare" active-class="active">
+            <span>Compare</span>
+          </NuxtLink>
           <NuxtLink to="/academy" active-class="active">
             <span>Academy</span>
           </NuxtLink>
