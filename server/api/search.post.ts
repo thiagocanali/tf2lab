@@ -3,9 +3,12 @@ import { readBody } from 'h3'
 // Simple in-memory cache for quick server-side caching during dev.
 const cache = new Map()
 const CACHE_TTL = 60 * 1000 // 60s
+const CACHE_MAX_ENTRIES = 500
+const REQUEST_TIMEOUT = 8_000
 const STEAM64_BASE = '76561197960265728'
 const PROFILE_LOG_LIMIT = 5
 const NAME_SEARCH_LOG_LIMIT = 100
+const NAME_DETAIL_LOG_LIMIT = 30
 
 function toSteam3Id(steamId: string): string {
   if (!/^\d{17}$/.test(steamId)) return steamId
@@ -252,6 +255,13 @@ export default defineEventHandler(async (event) => {
 
   const cacheKey = `${query}|${page}|${perPage}`
   const now = Date.now()
+  for (const [key, entry] of cache) {
+    if (now - entry.ts >= CACHE_TTL) cache.delete(key)
+  }
+  if (cache.size >= CACHE_MAX_ENTRIES) {
+    const oldestKey = cache.keys().next().value
+    if (oldestKey) cache.delete(oldestKey)
+  }
   const cached = cache.get(cacheKey)
   if (cached && (now - cached.ts) < CACHE_TTL) {
     return { ...cached.data, cached: true }
@@ -286,7 +296,7 @@ export default defineEventHandler(async (event) => {
 
     if (queryType === 'logid') {
       // The list endpoint does not support filtering by ID; use the detail endpoint.
-      const log = await $fetch(`${logsTfUrl}/${encodeURIComponent(query)}`, { method: 'GET' })
+      const log = await $fetch(`${logsTfUrl}/${encodeURIComponent(query)}`, { method: 'GET', timeout: REQUEST_TIMEOUT })
       if (log?.success !== false) {
         primaryResult = toLogReference({ ...log, id: query })
         results = [primaryResult]
@@ -294,7 +304,7 @@ export default defineEventHandler(async (event) => {
       }
     } else if (queryType === 'steamid') {
       // Search logs by player SteamID
-      const res = await $fetch(`${logsTfUrl}?player=${encodeURIComponent(query)}&limit=${perPage}&offset=${(page - 1) * perPage}`, { method: 'GET' })
+      const res = await $fetch(`${logsTfUrl}?player=${encodeURIComponent(query)}&limit=${perPage}&offset=${(page - 1) * perPage}`, { method: 'GET', timeout: REQUEST_TIMEOUT })
       // API returns { logs: [...], total: N }
       const logs = res?.logs ?? res?.results ?? []
       results = logs.map((log: any) => ({ id: String(log.id), ...log }))
@@ -310,8 +320,8 @@ export default defineEventHandler(async (event) => {
       // logs.tf indexes titles, not player names. We sample both title matches and
       // recent public logs, then keep only cards whose actual nick matches the query.
       const [titleResponse, recentResponse] = await Promise.all([
-        $fetch(`${logsTfUrl}?title=${encodeURIComponent(query)}&limit=${NAME_SEARCH_LOG_LIMIT}`, { method: 'GET' }),
-        $fetch(`${logsTfUrl}?limit=${NAME_SEARCH_LOG_LIMIT}&offset=0`, { method: 'GET' })
+        $fetch(`${logsTfUrl}?title=${encodeURIComponent(query)}&limit=${NAME_SEARCH_LOG_LIMIT}`, { method: 'GET', timeout: REQUEST_TIMEOUT }),
+        $fetch(`${logsTfUrl}?limit=${NAME_SEARCH_LOG_LIMIT}&offset=0`, { method: 'GET', timeout: REQUEST_TIMEOUT })
       ])
       const titleLogs = titleResponse?.logs ?? titleResponse?.results ?? []
       const recentLogs = recentResponse?.logs ?? recentResponse?.results ?? []
@@ -320,7 +330,7 @@ export default defineEventHandler(async (event) => {
       results = titleLogs.map((log: any) => ({ id: String(log.id), ...log }))
       total = titleResponse?.total ?? results.length
       players = await addPlayerAvatars(
-        buildNamePlayerCards(query, await fetchLogDetails(logsTfUrl, candidateLogs, candidateLogs.length)),
+        buildNamePlayerCards(query, await fetchLogDetails(logsTfUrl, candidateLogs, NAME_DETAIL_LOG_LIMIT)),
         steamApiKey
       )
     }
