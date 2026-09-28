@@ -171,14 +171,14 @@
         {{ copy.emptyPlayer.replace('{name}', lastQuery) }}
       </p>
       <p v-else>
-        Try a different SteamID, player name, or log ID.
+        {{ copy.tryDifferent }}
       </p>
       <div class="empty-state__suggestions">
         <p class="suggestions-label">{{ copy.suggestions }}</p>
         <div class="suggestion-list">
-          <button type="button" @click="useSuggestion('76561198000000001')">SteamID64: <code>76561198000000001</code></button>
-          <button type="button" @click="useSuggestion('saxton')">Player name: <code>saxton</code></button>
-          <button type="button" @click="useSuggestion('3690111')">Log ID: <code>3690111</code></button>
+          <button type="button" @click="useSuggestion('76561198000000001')">{{ copy.steamIdExample }}: <code>76561198000000001</code></button>
+          <button type="button" @click="useSuggestion('saxton')">{{ copy.playerNameExample }}: <code>saxton</code></button>
+          <button type="button" @click="useSuggestion('3690111')">{{ copy.logIdExample }}: <code>3690111</code></button>
         </div>
       </div>
     </section>
@@ -191,9 +191,9 @@
       <div class="empty-state__suggestions">
         <p class="suggestions-label">{{ copy.examples }}</p>
         <div class="suggestion-list">
-          <button type="button" @click="useSuggestion('76561198000000001')">SteamID64: <code>76561198000000001</code></button>
-          <button type="button" @click="useSuggestion('saxton')">Player name: <code>saxton</code></button>
-          <button type="button" @click="useSuggestion('3690111')">Log ID: <code>3690111</code></button>
+          <button type="button" @click="useSuggestion('76561198000000001')">{{ copy.steamIdExample }}: <code>76561198000000001</code></button>
+          <button type="button" @click="useSuggestion('saxton')">{{ copy.playerNameExample }}: <code>saxton</code></button>
+          <button type="button" @click="useSuggestion('3690111')">{{ copy.logIdExample }}: <code>3690111</code></button>
         </div>
       </div>
     </section>
