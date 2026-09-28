@@ -1,7 +1,7 @@
 <template>
   <div class="page-log">
     <Breadcrumbs :items="breadcrumbs" />
-    <BackButton fallback="/search" label="Back to search" />
+    <BackButton fallback="/search" :label="t.log.back" />
 
     <div v-if="pending" class="log-skeleton" aria-busy="true" aria-live="polite">
       <div class="skeleton-row">
@@ -32,14 +32,14 @@
 
     <section v-else class="empty-state" role="alert">
       <p class="empty-state__icon" aria-hidden="true">∅</p>
-      <h2>Log not found</h2>
+      <h2>{{ t.log.notFound }}</h2>
       <p>
-        We couldn't load log <code>#{{ id }}</code>.
-        {{ errorMessage ? `Reason: ${errorMessage}` : 'Please check the ID and try again.' }}
+        {{ t.log.unable }} <code>#{{ id }}</code>.
+        {{ errorMessage ? `${t.log.reason} ${errorMessage}` : t.log.checkId }}
       </p>
       <div class="empty-state__actions">
-        <BackButton fallback="/search" label="Back to search" />
-        <NuxtLink to="/search" class="action-link">New search</NuxtLink>
+        <BackButton fallback="/search" :label="t.log.back" />
+        <NuxtLink to="/search" class="action-link">{{ t.log.newSearch }}</NuxtLink>
       </div>
     </section>
   </div>
@@ -47,6 +47,8 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+
+const { t } = useLocale()
 import LogDetail from '~~/features/search/components/LogDetail.vue'
 import Breadcrumbs from '~~/components/Breadcrumbs.vue'
 import BackButton from '~~/components/BackButton.vue'
@@ -74,7 +76,7 @@ const errorMessage = computed<string | null>(() => {
 })
 
 const breadcrumbs = computed(() => [
-  { label: 'Search', to: '/search' },
+  { label: t.value.search.breadcrumb, to: '/search' },
   { label: data.value?.title?.trim() || `Log #${id}` }
 ])
 </script>
