@@ -248,7 +248,11 @@ function readPageFromRoute(): number {
 
 function formatDate(timestamp: string): string {
   try {
-    return new Date(timestamp).toLocaleString()
+    const language = locale.value === 'pt' ? 'pt-BR' : 'en-US'
+    return new Intl.DateTimeFormat(language, {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(new Date(timestamp))
   } catch {
     return timestamp
   }
