@@ -1,6 +1,8 @@
 <template>
   <div class="page-search">
-    <Breadcrumbs :items="[{ label: copy.breadcrumb }]" />
+    <nav class="breadcrumbs" :aria-label="copy.breadcrumb">
+      <span aria-current="page">{{ copy.breadcrumb }}</span>
+    </nav>
 
     <header class="search-header">
       <p class="eyebrow"><span aria-hidden="true">⌕</span> {{ copy.eyebrow }}</p>
@@ -317,8 +319,7 @@ function onSubmit() {
   syncRouteQuery(term, DEFAULT_PAGE)
 }
 
-function clearSearch() {
-  query.value = ''
+function resetSearchState() {
   results.value = []
   players.value = []
   total.value = 0
@@ -326,6 +327,12 @@ function clearSearch() {
   lastQuery.value = ''
   queryType.value = ''
   searchError.value = false
+  loading.value = false
+}
+
+function clearSearch() {
+  query.value = ''
+  resetSearchState()
   syncRouteQuery('', DEFAULT_PAGE)
 }
 
@@ -348,7 +355,11 @@ watch(
     page.value = Number.isFinite(nextPage) && nextPage > 0 ? nextPage : DEFAULT_PAGE
 
     if (next !== query.value) query.value = next
-    if (next.trim()) runSearch(next, page.value)
+    if (next.trim()) {
+      runSearch(next, page.value)
+    } else {
+      resetSearchState()
+    }
   }
 )
 
