@@ -9,14 +9,24 @@
     </header>
 
     <form class="compare-form" @submit.prevent="comparePlayers">
-      <div class="player-input">
+      <div class="player-input player-picker">
         <label for="player-a">Player A</label>
-        <input id="player-a" v-model.trim="playerAId" inputmode="numeric" pattern="[0-9]{17}" maxlength="17" placeholder="SteamID64" autocomplete="off" :aria-invalid="Boolean(formError && !isValidSteamId(playerAId))">
+        <input id="player-a" v-model.trim="playerAQuery" inputmode="search" placeholder="Nome ou SteamID64" autocomplete="off" role="combobox" :aria-expanded="activePicker === 'a' && suggestions.length > 0" aria-controls="player-a-suggestions" :aria-invalid="Boolean(formError && !isValidSteamId(playerAId))" @focus="activePicker = 'a'; searchPlayers(playerAQuery)" @input="onPlayerInput('a')" @keydown.esc="closeSuggestions">
+        <div v-if="activePicker === 'a' && suggestions.length" id="player-a-suggestions" class="player-suggestions" role="listbox">
+          <button v-for="player in suggestions" :key="player.steamId" type="button" role="option" class="player-suggestion" @click="selectPlayer('a', player)">
+            <span class="suggestion-avatar">{{ initials(player.name) }}</span><span><strong>{{ player.name }}</strong><small>{{ player.steamId }}</small></span>
+          </button>
+        </div>
       </div>
       <button type="button" class="swap-button" aria-label="Trocar jogadores de posição" @click="swapPlayers">↔</button>
-      <div class="player-input">
+      <div class="player-input player-picker">
         <label for="player-b">Player B</label>
-        <input id="player-b" v-model.trim="playerBId" inputmode="numeric" pattern="[0-9]{17}" maxlength="17" placeholder="SteamID64" autocomplete="off" :aria-invalid="Boolean(formError && !isValidSteamId(playerBId))">
+        <input id="player-b" v-model.trim="playerBQuery" inputmode="search" placeholder="Nome ou SteamID64" autocomplete="off" role="combobox" :aria-expanded="activePicker === 'b' && suggestions.length > 0" aria-controls="player-b-suggestions" :aria-invalid="Boolean(formError && !isValidSteamId(playerBId))" @focus="activePicker = 'b'; searchPlayers(playerBQuery)" @input="onPlayerInput('b')" @keydown.esc="closeSuggestions">
+        <div v-if="activePicker === 'b' && suggestions.length" id="player-b-suggestions" class="player-suggestions" role="listbox">
+          <button v-for="player in suggestions" :key="player.steamId" type="button" role="option" class="player-suggestion" @click="selectPlayer('b', player)">
+            <span class="suggestion-avatar">{{ initials(player.name) }}</span><span><strong>{{ player.name }}</strong><small>{{ player.steamId }}</small></span>
+          </button>
+        </div>
       </div>
       <label class="window-input" for="comparison-window">
         <span>Janela</span>
@@ -91,6 +101,7 @@ import { computed, ref } from 'vue'
 const { t } = useLocale()
 
 interface Profile { name: string; steamId: string; overview?: Record<string, number> }
+interface PlayerSuggestion { name: string; steamId: string; avatarUrl?: string }
 interface Metric { key: string; label: string; decimals?: number }
 
 const route = useRoute()
@@ -98,6 +109,11 @@ const router = useRouter()
 const initialQuery = route.query
 const playerAId = ref(typeof initialQuery.a === 'string' ? initialQuery.a : '')
 const playerBId = ref(typeof initialQuery.b === 'string' ? initialQuery.b : '')
+const playerAQuery = ref(playerAId.value)
+const playerBQuery = ref(playerBId.value)
+const suggestions = ref<PlayerSuggestion[]>([])
+const activePicker = ref<'a' | 'b' | null>(null)
+let searchRequest = 0
 const profiles = ref<Profile[]>([])
 const loading = ref(false)
 const windowOptions = [10, 25, 50]
@@ -117,6 +133,37 @@ const metrics: Metric[] = [
 
 function initials(name: string) { return name.split(/\s+/).map((part) => part[0]).slice(0, 2).join('').toUpperCase() || '?' }
 function value(profile: Profile, key: string) { return Number(profile.overview?.[key] ?? 0) }
+
+function onPlayerInput(side: 'a' | 'b') {
+  const query = side === 'a' ? playerAQuery.value : playerBQuery.value
+  if (side === 'a') playerAId.value = query
+  else playerBId.value = query
+  activePicker.value = side
+  void searchPlayers(query)
+}
+
+async function searchPlayers(query: string) {
+  const normalized = query.trim()
+  if (normalized.length < 2) { suggestions.value = []; return }
+  const requestId = ++searchRequest
+  if (isValidSteamId(normalized)) {
+    suggestions.value = [{ name: normalized, steamId: normalized }]
+    return
+  }
+  try {
+    const response = await $fetch<{ players?: PlayerSuggestion[] }>('/api/search', { method: 'POST', body: { query: normalized, perPage: 5 } })
+    if (requestId === searchRequest) suggestions.value = (response.players ?? []).filter((player) => player.steamId !== (activePicker.value === 'a' ? playerBId.value : playerAId.value)).slice(0, 5)
+  } catch { if (requestId === searchRequest) suggestions.value = [] }
+}
+
+function selectPlayer(side: 'a' | 'b', player: PlayerSuggestion) {
+  if (side === 'a') { playerAId.value = player.steamId; playerAQuery.value = player.name }
+  else { playerBId.value = player.steamId; playerBQuery.value = player.name }
+  suggestions.value = []
+  activePicker.value = null
+}
+
+function closeSuggestions() { activePicker.value = null; suggestions.value = [] }
 function formatMetric(profile: Profile, metric: Metric) { const result = value(profile, metric.key); return metric.decimals ? result.toFixed(metric.decimals) : result.toLocaleString() }
 function winnerClass(key: string, index: number) {
   const first = value(profiles.value[0], key); const second = value(profiles.value[1], key)
@@ -134,6 +181,9 @@ function swapPlayers() {
   const currentA = playerAId.value
   playerAId.value = playerBId.value
   playerBId.value = currentA
+  const currentAQuery = playerAQuery.value
+  playerAQuery.value = playerBQuery.value
+  playerBQuery.value = currentAQuery
 }
 
 function clearComparison() {
@@ -141,6 +191,9 @@ function clearComparison() {
   formError.value = ''
   playerAId.value = ''
   playerBId.value = ''
+  playerAQuery.value = ''
+  playerBQuery.value = ''
+  closeSuggestions()
   void router.replace({ query: {} })
 }
 
@@ -170,7 +223,16 @@ async function comparePlayers() {
 .compare-header p:last-child { color: var(--text-muted); font-size: 1.05rem; }
 .compare-form { display: grid; grid-template-columns: 1fr auto 1fr auto; align-items: end; gap: 1rem; padding: 1.25rem; border: 1px solid var(--border); border-radius: 1rem; background: rgba(255,255,255,.03); }
 .player-input { display: grid; gap: .5rem; } .player-input label { color: var(--text-soft); font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+.player-picker { position: relative; }
 .player-input input { width: 100%; padding: .85rem 1rem; border: 1px solid var(--border); border-radius: .65rem; background: var(--surface); color: var(--text); }
+.player-suggestions { position: absolute; z-index: 5; top: calc(100% + .35rem); right: 0; left: 0; overflow: hidden; border: 1px solid var(--border); border-radius: .7rem; background: var(--surface); box-shadow: 0 14px 30px rgba(0,0,0,.3); }
+.player-suggestion { display: flex; width: 100%; align-items: center; gap: .7rem; padding: .7rem .8rem; border: 0; border-bottom: 1px solid var(--border); background: transparent; color: var(--text); text-align: left; cursor: pointer; }
+.player-suggestion:last-child { border-bottom: 0; }
+.player-suggestion:hover, .player-suggestion:focus-visible { background: rgba(255,79,60,.1); outline: 0; }
+.player-suggestion span:last-child { display: grid; gap: .15rem; min-width: 0; }
+.player-suggestion strong, .player-suggestion small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.player-suggestion small { color: var(--text-muted); font-size: .72rem; }
+.suggestion-avatar { display: grid; place-items: center; width: 2rem; height: 2rem; flex: 0 0 auto; border-radius: 50%; background: rgba(255,79,60,.16); color: var(--tf2-red); font-size: .7rem; font-weight: 800; }
 .window-input { display: grid; gap: .5rem; color: var(--text-soft); font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
 .window-input select { min-width: 9rem; padding: .85rem .75rem; border: 1px solid var(--border); border-radius: .65rem; background: var(--surface); color: var(--text); font: inherit; text-transform: none; letter-spacing: normal; }
 .compare-form button { padding: .85rem 1.1rem; border: 0; border-radius: .65rem; background: var(--tf2-red); color: #fff; font-weight: 700; cursor: pointer; } .compare-form button:disabled { opacity: .5; cursor: not-allowed; }
