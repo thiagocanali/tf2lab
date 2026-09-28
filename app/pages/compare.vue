@@ -96,7 +96,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 
 const { t } = useLocale()
 
@@ -214,6 +214,10 @@ async function comparePlayers() {
   } catch { formError.value = t.value.compare.failed }
   finally { loading.value = false }
 }
+
+onMounted(() => {
+  if (canCompare.value) void comparePlayers()
+})
 </script>
 
 <style scoped>
