@@ -1,7 +1,7 @@
 <template>
   <div class="page-player">
     <Breadcrumbs :items="breadcrumbs" />
-    <BackButton fallback="/search" label="Back to search" />
+    <BackButton fallback="/search" :label="t.player.back" />
 
     <div v-if="pending" class="player-skeleton" aria-busy="true" aria-live="polite">
       <div class="skeleton-line skeleton-line--xl" />
@@ -29,10 +29,10 @@
           <div class="metrics-controls">
             <div class="section-heading">
               <div>
-                <p class="eyebrow">Janela de análise</p>
+                <p class="eyebrow">{{ t.player.analysisWindow }}</p>
                 <h2>{{ periodLabel }}</h2>
               </div>
-              <div class="period-selector" role="tablist" aria-label="Período de análise">
+              <div class="period-selector" role="tablist" :aria-label="t.player.analysisPeriod">
                 <button
                   v-for="option in periodOptions"
                   :key="option"
@@ -41,13 +41,13 @@
                   :class="{ active: selectedPeriod === option }"
                   @click="selectLogLimit(option)"
                 >
-                  {{ option === 'all' ? 'Tudo' : `${option}` }}
+                  {{ option === 'all' ? t.player.all : `${option}` }}
                 </button>
               </div>
             </div>
 
             <div v-if="!hasEnoughLogsForAnalysis" class="analysis-warning">
-              A análise de evolução precisa de pelo menos {{ minimumLogsForAnalysis }} logs para ser confiável.
+              {{ t.player.analysisWarning.replace('{n}', String(minimumLogsForAnalysis)) }}
             </div>
           </div>
         </div>
@@ -72,14 +72,14 @@
       </section>
 
       <section class="profile-section profile-section--charts">
-        <KDTrendChart :series="kdSeries" title="K/D por partida" series-name="K/D" color="var(--tf2-red)" />
-        <KDTrendChart :series="damageTrendSeries" title="Damage por partida" series-name="Damage" color="#4ade80" />
+        <KDTrendChart :series="kdSeries" :title="t.player.kdPerMatch" series-name="K/D" color="var(--tf2-red)" />
+        <KDTrendChart :series="damageTrendSeries" :title="t.player.damagePerMatch" series-name="Damage" color="#4ade80" />
         <ClassUsageRadar :classes="classUsage" />
       </section>
 
       <section class="profile-section profile-section--charts profile-section--charts-secondary">
-        <KDTrendChart :series="healingTrendSeries" title="Cura por partida" series-name="Heals" color="#60a5fa" />
-        <ClassPerformanceChart :stats="filteredClassStats" metric="damage" title="Damage por classe" />
+        <KDTrendChart :series="healingTrendSeries" :title="t.player.healingPerMatch" series-name="Heals" color="#60a5fa" />
+        <ClassPerformanceChart :stats="filteredClassStats" metric="damage" :title="t.player.damageByClass" />
       </section>
 
       <section class="profile-section profile-section--best-logs">
@@ -110,14 +110,14 @@
 
     <section v-else class="empty-state" role="alert">
       <p class="empty-state__icon" aria-hidden="true">∅</p>
-      <h2>Player not found</h2>
+      <h2>{{ t.player.notFound }}</h2>
       <p>
-        No analyzed performance data is available for <code>#{{ id }}</code>.
-        {{ errorMessage ? `Reason: ${errorMessage}` : 'Check the SteamID or try a player with public logs.' }}
+        {{ t.player.unavailable }} <code>#{{ id }}</code>.
+        {{ errorMessage ? `${t.player.reason} ${errorMessage}` : t.player.checkSteam }}
       </p>
       <div class="empty-state__actions">
-        <BackButton fallback="/search" label="Back to search" />
-        <NuxtLink to="/search" class="action-link">New search</NuxtLink>
+        <BackButton fallback="/search" :label="t.player.back" />
+        <NuxtLink to="/search" class="action-link">{{ t.player.newSearch }}</NuxtLink>
       </div>
     </section>
   </div>
@@ -125,6 +125,10 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+
+const { locale, t } = useLocale()
+
+const localeLabel = (unit: string, value: number | 'all') => value === 'all' ? t.value.player.all : `${locale.value === 'pt' ? 'Últimos' : 'Last'} ${value} ${unit}`
 import type { BrTf2PickupMatch, PlayerProfile } from '~~/features/player/types'
 import Breadcrumbs from '~~/components/Breadcrumbs.vue'
 import BackButton from '~~/components/BackButton.vue'
@@ -195,7 +199,7 @@ const mainClassStat = computed(() => {
   const mainClassName = player.value?.mainClass?.className
   return player.value?.classStats?.find((stat) => stat.className === mainClassName)
 })
-const periodLabel = computed(() => selectedPeriod.value === 'all' ? 'Todo o histórico' : `Últimos ${selectedPeriod.value} logs`)
+const periodLabel = computed(() => selectedPeriod.value === 'all' ? t.value.player.all : `${localeLabel(t.value.player.logs, selectedPeriod.value)}`)
 const hasEnoughLogsForAnalysis = computed(() => (player.value?.recentLogs?.length ?? 0) >= minimumLogsForAnalysis)
 
 const visibleLogs = computed(() => {
@@ -355,7 +359,7 @@ const damageBreakdown = computed(() => {
 })
 
 const breadcrumbs = computed(() => [
-  { label: 'Search', to: '/search' },
+  { label: t.value.search.breadcrumb, to: '/search' },
   { label: player.value?.name ?? `Player ${id}` }
 ])
 </script>

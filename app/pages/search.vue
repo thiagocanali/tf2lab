@@ -1,6 +1,8 @@
 <template>
   <div class="page-search">
-    <Breadcrumbs :items="[{ label: copy.breadcrumb }]" />
+    <nav class="breadcrumbs" :aria-label="copy.breadcrumb">
+      <span aria-current="page">{{ copy.breadcrumb }}</span>
+    </nav>
 
     <header class="search-header">
       <p class="eyebrow"><span aria-hidden="true">⌕</span> {{ copy.eyebrow }}</p>
@@ -96,7 +98,7 @@
               </div>
               <div class="stat" v-if="p.overview.totalDamage">
                 <span>{{ copy.damage }}</span>
-                <strong>{{ p.overview.totalDamage.toLocaleString() }}</strong>
+                <strong>{{ p.overview.totalDamage.toLocaleString(locale === 'pt' ? 'pt-BR' : 'en-US') }}</strong>
               </div>
             </div>
             <div class="result-card__actions">
@@ -171,14 +173,14 @@
         {{ copy.emptyPlayer.replace('{name}', lastQuery) }}
       </p>
       <p v-else>
-        Try a different SteamID, player name, or log ID.
+        {{ copy.tryDifferent }}
       </p>
       <div class="empty-state__suggestions">
         <p class="suggestions-label">{{ copy.suggestions }}</p>
         <div class="suggestion-list">
-          <button type="button" @click="useSuggestion('76561198000000001')">SteamID64: <code>76561198000000001</code></button>
-          <button type="button" @click="useSuggestion('saxton')">Player name: <code>saxton</code></button>
-          <button type="button" @click="useSuggestion('3690111')">Log ID: <code>3690111</code></button>
+          <button type="button" @click="useSuggestion('76561198000000001')">{{ copy.steamIdExample }}: <code>76561198000000001</code></button>
+          <button type="button" @click="useSuggestion('saxton')">{{ copy.playerNameExample }}: <code>saxton</code></button>
+          <button type="button" @click="useSuggestion('3690111')">{{ copy.logIdExample }}: <code>3690111</code></button>
         </div>
       </div>
     </section>
@@ -191,9 +193,9 @@
       <div class="empty-state__suggestions">
         <p class="suggestions-label">{{ copy.examples }}</p>
         <div class="suggestion-list">
-          <button type="button" @click="useSuggestion('76561198000000001')">SteamID64: <code>76561198000000001</code></button>
-          <button type="button" @click="useSuggestion('saxton')">Player name: <code>saxton</code></button>
-          <button type="button" @click="useSuggestion('3690111')">Log ID: <code>3690111</code></button>
+          <button type="button" @click="useSuggestion('76561198000000001')">{{ copy.steamIdExample }}: <code>76561198000000001</code></button>
+          <button type="button" @click="useSuggestion('saxton')">{{ copy.playerNameExample }}: <code>saxton</code></button>
+          <button type="button" @click="useSuggestion('3690111')">{{ copy.logIdExample }}: <code>3690111</code></button>
         </div>
       </div>
     </section>
@@ -248,7 +250,11 @@ function readPageFromRoute(): number {
 
 function formatDate(timestamp: string): string {
   try {
-    return new Date(timestamp).toLocaleString()
+    const language = locale.value === 'pt' ? 'pt-BR' : 'en-US'
+    return new Intl.DateTimeFormat(language, {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(new Date(timestamp))
   } catch {
     return timestamp
   }
@@ -313,8 +319,7 @@ function onSubmit() {
   syncRouteQuery(term, DEFAULT_PAGE)
 }
 
-function clearSearch() {
-  query.value = ''
+function resetSearchState() {
   results.value = []
   players.value = []
   total.value = 0
@@ -322,6 +327,12 @@ function clearSearch() {
   lastQuery.value = ''
   queryType.value = ''
   searchError.value = false
+  loading.value = false
+}
+
+function clearSearch() {
+  query.value = ''
+  resetSearchState()
   syncRouteQuery('', DEFAULT_PAGE)
 }
 
@@ -344,7 +355,11 @@ watch(
     page.value = Number.isFinite(nextPage) && nextPage > 0 ? nextPage : DEFAULT_PAGE
 
     if (next !== query.value) query.value = next
-    if (next.trim()) runSearch(next, page.value)
+    if (next.trim()) {
+      runSearch(next, page.value)
+    } else {
+      resetSearchState()
+    }
   }
 )
 

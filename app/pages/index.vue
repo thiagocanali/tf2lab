@@ -12,7 +12,7 @@
         </p>
 
         <form class="hero-search" @submit.prevent="onSubmit">
-          <label class="sr-only" for="player-search">SteamID, player name, or logs.tf URL</label>
+          <label class="sr-only" for="player-search">{{ t.home.searchLabel }}</label>
           <span class="search-icon" aria-hidden="true">⌕</span>
           <input
             id="player-search"
@@ -26,14 +26,14 @@
         <p class="search-hint">{{ t.home.hint }}</p>
       </div>
 
-      <aside class="hero-panel" aria-label="TF2Lab analytics preview">
+      <aside class="hero-panel" :aria-label="t.home.previewLabel">
         <div class="panel-topline">
-          <span class="live-dot" /> Live match insights
-          <span class="panel-period">Last 30 days</span>
+          <span class="live-dot" /> {{ t.home.live }}
+          <span class="panel-period">{{ t.home.period }}</span>
         </div>
         <div class="metric-row">
           <div>
-            <span class="metric-label">Performance score</span>
+            <span class="metric-label">{{ t.home.score }}</span>
             <strong>87<span>/100</span></strong>
           </div>
           <span class="score-badge">+12%</span>
@@ -42,16 +42,16 @@
           <span v-for="height in chartBars" :key="height" :style="{ height }" />
         </div>
         <div class="panel-footer">
-          <span>Recent matches</span>
-          <strong>14 analyzed</strong>
+          <span>{{ t.home.matches }}</span>
+          <strong>{{ t.home.analyzed }}</strong>
         </div>
       </aside>
     </section>
 
     <section class="features" aria-labelledby="features-title">
       <header class="features-header">
-        <h2 id="features-title">What TF2Lab does</h2>
-        <p>Three pillars built for competitive players</p>
+        <h2 id="features-title">{{ t.home.features }}</h2>
+        <p>{{ t.home.pillars }}</p>
       </header>
 
       <div class="features-grid">
@@ -62,9 +62,9 @@
               <path d="m19 9-5 5-4-4-3 3" />
             </svg>
           </div>
-          <h3>Analytics</h3>
-          <p>Deep dive into your logs — K/D trends, damage breakdowns, class usage radars, and performance benchmarks across maps and seasons.</p>
-          <NuxtLink to="/search" class="feature-cta">View analytics →</NuxtLink>
+          <h3>{{ t.home.analytics }}</h3>
+          <p>{{ t.home.analyticsText }}</p>
+          <NuxtLink to="/search" class="feature-cta">{{ t.home.analyticsCta }}</NuxtLink>
         </article>
 
         <article class="feature-card" :class="{ 'feature-card--competition': true }">
@@ -73,9 +73,9 @@
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
             </svg>
           </div>
-          <h3>Competition</h3>
-          <p>Track official matches, scrims, and tournaments. Scout opponents, manage team lineups, and prepare with data-driven insights.</p>
-          <NuxtLink to="/competition" class="feature-cta">Explore matches →</NuxtLink>
+          <h3>{{ t.home.competition }}</h3>
+          <p>{{ t.home.competitionText }}</p>
+          <NuxtLink to="/competition" class="feature-cta">{{ t.home.competitionCta }}</NuxtLink>
         </article>
 
         <article class="feature-card" :class="{ 'feature-card--academy': true }">
@@ -85,25 +85,25 @@
               <path d="M6 12v5c3 3 9 3 12 0v-5" />
             </svg>
           </div>
-          <h3>Academy</h3>
-          <p>Learn competitive TF2 from scratch — guides on configs, HUDs, whitelists, map callouts, and progression from PUGs to leagues.</p>
-          <NuxtLink to="/academy" class="feature-cta">Start learning →</NuxtLink>
+          <h3>{{ t.home.academy }}</h3>
+          <p>{{ t.home.academyText }}</p>
+          <NuxtLink to="/academy" class="feature-cta">{{ t.home.academyCta }}</NuxtLink>
         </article>
       </div>
     </section>
 
-    <section class="proof" aria-label="TF2Lab benefits">
+    <section class="proof" :aria-label="t.home.benefits">
       <article>
         <span class="proof-icon">↗</span>
-        <div><strong>Find your edge</strong><p>See what wins more rounds.</p></div>
+        <div><strong>{{ t.home.edge }}</strong><p>{{ t.home.edgeText }}</p></div>
       </article>
       <article>
         <span class="proof-icon">◌</span>
-        <div><strong>Learn from every match</strong><p>Turn trends into training goals.</p></div>
+        <div><strong>{{ t.home.learn }}</strong><p>{{ t.home.learnText }}</p></div>
       </article>
       <article>
         <span class="proof-icon">⌁</span>
-        <div><strong>Built for competitive TF2</strong><p>Focused, useful, and free.</p></div>
+        <div><strong>{{ t.home.built }}</strong><p>{{ t.home.builtText }}</p></div>
       </article>
     </section>
   </main>

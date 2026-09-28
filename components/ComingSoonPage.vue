@@ -4,14 +4,14 @@
       <div class="coming-soon__grid" aria-hidden="true" />
       <div class="coming-soon__copy">
         <p class="coming-soon__eyebrow"><span class="coming-soon__mark" /> {{ eyebrow }}</p>
-        <span class="coming-soon__status">Coming soon</span>
+        <span class="coming-soon__status">{{ copy.status }}</span>
         <h1 id="coming-soon-title">{{ title }}</h1>
         <p class="coming-soon__description">{{ description }}</p>
-        <NuxtLink to="/" class="coming-soon__back">Back to home <span aria-hidden="true">→</span></NuxtLink>
+        <NuxtLink to="/" class="coming-soon__back">{{ copy.back }} <span aria-hidden="true">→</span></NuxtLink>
       </div>
 
-      <aside class="coming-soon__panel" aria-label="Planned features">
-        <span class="coming-soon__panel-label">On the board</span>
+      <aside class="coming-soon__panel" :aria-label="copy.features">
+        <span class="coming-soon__panel-label">{{ copy.board }}</span>
         <ul>
           <li v-for="item in items" :key="item">
             <span class="coming-soon__bullet" aria-hidden="true">+</span>
@@ -24,6 +24,9 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useLocale } from '~/app/composables/useLocale'
+
 defineProps<{
   eyebrow: string
   title: string
@@ -31,6 +34,11 @@ defineProps<{
   items: string[]
   accent: 'orange' | 'blue'
 }>()
+
+const { locale } = useLocale()
+const copy = computed(() => locale.value === 'pt'
+  ? { status: 'Em breve', back: 'Voltar ao início', board: 'No planejamento', features: 'Funcionalidades planejadas' }
+  : { status: 'Coming soon', back: 'Back to home', board: 'On the board', features: 'Planned features' })
 </script>
 
 <style scoped>
