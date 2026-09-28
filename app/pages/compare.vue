@@ -88,6 +88,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
+const { t } = useLocale()
+
 interface Profile { name: string; steamId: string; overview?: Record<string, number> }
 interface Metric { key: string; label: string; decimals?: number }
 

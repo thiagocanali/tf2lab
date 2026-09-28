@@ -211,6 +211,8 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+
+const { t } = useLocale()
 import useLogsService from '~~/features/analytics/services/logsService'
 import type { PlayerLogReference } from '~~/features/player/types'
 

@@ -5,11 +5,10 @@
       <div class="hero-glow hero-glow-blue" aria-hidden="true" />
 
       <div class="hero-copy">
-        <p class="eyebrow"><span aria-hidden="true">✦</span> Competitive TF2 analytics</p>
-        <h1 id="hero-title">Play smarter.<br><span>Improve faster.</span></h1>
+        <p class="eyebrow"><span aria-hidden="true">✦</span> {{ t.home.eyebrow }}</p>
+        <h1 id="hero-title">{{ t.home.title }}<br><span>{{ t.home.titleAccent }}</span></h1>
         <p class="hero-description">
-          Turn your logs.tf matches into the next training session. Track performance,
-          find patterns, and focus on what moves your game forward.
+          {{ t.home.description }}
         </p>
 
         <form class="hero-search" @submit.prevent="onSubmit">
@@ -19,12 +18,12 @@
             id="player-search"
             v-model="query"
             type="search"
-            placeholder="Search SteamID, player, or log URL"
+            :placeholder="t.home.placeholder"
             autocomplete="off"
           >
-          <button type="submit" :disabled="!query.trim()">Analyze player</button>
+          <button type="submit" :disabled="!query.trim()">{{ t.home.analyze }}</button>
         </form>
-        <p class="search-hint">Try a SteamID64, logs.tf log ID, or player name.</p>
+        <p class="search-hint">{{ t.home.hint }}</p>
       </div>
 
       <aside class="hero-panel" aria-label="TF2Lab analytics preview">
@@ -112,6 +111,8 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+
+const { t } = useLocale()
 
 const query = ref('')
 const chartBars = ['38%', '54%', '47%', '66%', '58%', '76%', '69%', '88%', '80%', '100%']
