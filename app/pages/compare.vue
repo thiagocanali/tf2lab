@@ -11,7 +11,7 @@
     <form class="compare-form" @submit.prevent="comparePlayers">
       <div class="player-input player-picker">
         <label for="player-a">{{ t.compare.playerA }}</label>
-        <input id="player-a" v-model.trim="playerAQuery" inputmode="search" placeholder="Nome ou SteamID64" autocomplete="off" role="combobox" :aria-expanded="activePicker === 'a' && suggestions.length > 0" aria-controls="player-a-suggestions" :aria-invalid="Boolean(formError && !isValidSteamId(playerAId))" @focus="activePicker = 'a'; searchPlayers(playerAQuery)" @input="onPlayerInput('a')" @keydown.esc="closeSuggestions">
+        <input id="player-a" v-model.trim="playerAQuery" inputmode="search" :placeholder="t.compare.inputPlaceholder" autocomplete="off" role="combobox" :aria-expanded="activePicker === 'a' && suggestions.length > 0" aria-controls="player-a-suggestions" :aria-invalid="Boolean(formError && !isValidSteamId(playerAId))" @focus="activePicker = 'a'; searchPlayers(playerAQuery)" @input="onPlayerInput('a')" @keydown.esc="closeSuggestions">
         <div v-if="activePicker === 'a' && suggestions.length" id="player-a-suggestions" class="player-suggestions" role="listbox">
           <button v-for="player in suggestions" :key="player.steamId" type="button" role="option" class="player-suggestion" @click="selectPlayer('a', player)">
             <span class="suggestion-avatar">{{ initials(player.name) }}</span><span><strong>{{ player.name }}</strong><small>{{ player.steamId }}</small></span>
@@ -21,7 +21,7 @@
       <button type="button" class="swap-button" aria-label="Trocar jogadores de posição" @click="swapPlayers">↔</button>
       <div class="player-input player-picker">
         <label for="player-b">{{ t.compare.playerB }}</label>
-        <input id="player-b" v-model.trim="playerBQuery" inputmode="search" placeholder="Nome ou SteamID64" autocomplete="off" role="combobox" :aria-expanded="activePicker === 'b' && suggestions.length > 0" aria-controls="player-b-suggestions" :aria-invalid="Boolean(formError && !isValidSteamId(playerBId))" @focus="activePicker = 'b'; searchPlayers(playerBQuery)" @input="onPlayerInput('b')" @keydown.esc="closeSuggestions">
+        <input id="player-b" v-model.trim="playerBQuery" inputmode="search" :placeholder="t.compare.inputPlaceholder" autocomplete="off" role="combobox" :aria-expanded="activePicker === 'b' && suggestions.length > 0" aria-controls="player-b-suggestions" :aria-invalid="Boolean(formError && !isValidSteamId(playerBId))" @focus="activePicker = 'b'; searchPlayers(playerBQuery)" @input="onPlayerInput('b')" @keydown.esc="closeSuggestions">
         <div v-if="activePicker === 'b' && suggestions.length" id="player-b-suggestions" class="player-suggestions" role="listbox">
           <button v-for="player in suggestions" :key="player.steamId" type="button" role="option" class="player-suggestion" @click="selectPlayer('b', player)">
             <span class="suggestion-avatar">{{ initials(player.name) }}</span><span><strong>{{ player.name }}</strong><small>{{ player.steamId }}</small></span>
