@@ -3,34 +3,32 @@
     <section class="academy-hero" aria-labelledby="academy-title">
       <div class="hero-grid" aria-hidden="true" />
       <div class="hero-copy">
-        <p class="eyebrow"><span class="eyebrow-mark" aria-hidden="true">+</span> TF2Lab Academy</p>
-        <h1 id="academy-title">Melhore com dados e pratica.</h1>
-        <p class="hero-description">
-          Use suas partidas para escolher o proximo treino, entender seus padroes e construir habitos que aparecem no placar.
-        </p>
+        <p class="eyebrow"><span class="eyebrow-mark" aria-hidden="true">+</span> {{ copy.eyebrow }}</p>
+        <h1 id="academy-title">{{ copy.title }}</h1>
+        <p class="hero-description">{{ copy.description }}</p>
         <div class="hero-actions">
-          <NuxtLink to="/search" class="primary-link">Ver meu perfil <span aria-hidden="true">-&gt;</span></NuxtLink>
-          <a href="#como-usar" class="secondary-link">Comecar pelo basico</a>
+          <NuxtLink to="/search" class="primary-link">{{ copy.viewProfile }} <span aria-hidden="true">-&gt;</span></NuxtLink>
+          <a href="#como-usar" class="secondary-link">{{ copy.basics }}</a>
         </div>
       </div>
 
       <aside class="hero-note" aria-label="Ciclo de treino">
-        <span class="note-label">Ciclo de treino</span>
-        <strong>Jogar. Medir. Ajustar.</strong>
+        <span class="note-label">{{ copy.cycle }}</span>
+        <strong>{{ copy.cycleStrong }}</strong>
         <div class="cycle-line" aria-hidden="true">
           <span>01</span><i /><span>02</span><i /><span>03</span>
         </div>
-        <p>Uma meta pequena e uma revisão honesta valem mais que uma sessão aleatória.</p>
+        <p>{{ copy.cycleText }}</p>
       </aside>
     </section>
 
     <section id="como-usar" class="academy-section" aria-labelledby="how-title">
       <header class="section-heading">
         <div>
-          <p class="section-kicker">Um ponto de partida</p>
-          <h2 id="how-title">Como usar o TF2Lab</h2>
+          <p class="section-kicker">{{ copy.start }}</p>
+          <h2 id="how-title">{{ copy.how }}</h2>
         </div>
-        <p class="section-intro">Transforme uma lista de logs em uma pergunta objetiva para o próximo treino.</p>
+        <p class="section-intro">{{ copy.intro }}</p>
       </header>
 
       <div class="steps-grid">
@@ -45,10 +43,10 @@
     <section class="academy-section class-section" aria-labelledby="classes-title">
       <header class="section-heading">
         <div>
-          <p class="section-kicker">Escolha seu foco</p>
-          <h2 id="classes-title">Trilhas por classe</h2>
+          <p class="section-kicker">{{ copy.focus }}</p>
+          <h2 id="classes-title">{{ copy.tracks }}</h2>
         </div>
-        <span class="section-count">{{ classes.length }} classes no radar</span>
+        <span class="section-count">{{ classes.length }} {{ copy.radar }}</span>
       </header>
 
       <div class="class-grid">
@@ -58,7 +56,7 @@
             <h3>{{ item.name }}</h3>
             <p>{{ item.focus }}</p>
           </div>
-          <span class="status">Em breve</span>
+          <span class="status">{{ copy.soon }}</span>
         </article>
       </div>
     </section>
@@ -66,9 +64,9 @@
     <section class="academy-section resources-section" aria-labelledby="resources-title">
       <div class="resource-panel">
         <div>
-          <p class="section-kicker">Ferramentas da comunidade</p>
-          <h2 id="resources-title">Dados bons começam na fonte certa.</h2>
-          <p>O TF2Lab organiza o caminho. Estas ferramentas continuam sendo parte essencial da cena.</p>
+          <p class="section-kicker">{{ copy.tools }}</p>
+          <h2 id="resources-title">{{ copy.source }}</h2>
+          <p>{{ copy.sourceText }}</p>
         </div>
         <div class="resource-links">
           <a v-for="resource in resources" :key="resource.name" :href="resource.url" target="_blank" rel="noopener noreferrer" class="resource-link" :class="{ 'resource-link--featured': resource.featured }">
@@ -82,8 +80,8 @@
     <section class="academy-section tips-section" aria-labelledby="tips-title">
       <header class="section-heading">
         <div>
-          <p class="section-kicker">Para a próxima sessão</p>
-          <h2 id="tips-title">Dicas rápidas de treino</h2>
+          <p class="section-kicker">{{ copy.next }}</p>
+          <h2 id="tips-title">{{ copy.tips }}</h2>
         </div>
       </header>
       <div class="tips-grid">
@@ -100,23 +98,21 @@
 </template>
 
 <script setup lang="ts">
-const steps = [
-  { title: 'Abra seu perfil', description: 'Pesquise sua SteamID e veja médias, tendências e as partidas que formam sua amostra.' },
-  { title: 'Encontre um padrão', description: 'Compare K/D, dano, cura e classes. Procure uma situação recorrente, não um jogo isolado.' },
-  { title: 'Treine uma coisa', description: 'Escolha um objetivo observável para a próxima sessão e volte aos dados depois de jogar.' }
-]
-
-const classes = [
-  { name: 'Scout', short: 'SC', tone: 'red', focus: 'Movimento, mira e pressão' },
-  { name: 'Soldier', short: 'SO', tone: 'orange', focus: 'Aberturas, dano e controle' },
-  { name: 'Pyro', short: 'PY', tone: 'red', focus: 'Proteção e espaço' },
-  { name: 'Demoman', short: 'DE', tone: 'blue', focus: 'Spam, traps e ritmo' },
-  { name: 'Heavy', short: 'HE', tone: 'orange', focus: 'Sobrevivência e presença' },
-  { name: 'Engineer', short: 'EN', tone: 'blue', focus: 'Posicionamento e suporte' },
-  { name: 'Medic', short: 'ME', tone: 'blue', focus: 'Über, rotas e leitura' },
-  { name: 'Sniper', short: 'SN', tone: 'orange', focus: 'Ângulos e impacto' },
-  { name: 'Spy', short: 'SP', tone: 'red', focus: 'Informação e timing' }
-]
+const { locale } = useLocale()
+const isPortuguese = computed(() => locale.value === 'pt')
+const copy = computed(() => isPortuguese.value ? {
+  eyebrow: 'Academia do TF2Lab', title: 'Melhore com dados e prática.', description: 'Use suas partidas para escolher o próximo treino, entender seus padrões e construir hábitos que aparecem no placar.', viewProfile: 'Ver meu perfil', basics: 'Começar pelo básico', cycle: 'Ciclo de treino', cycleStrong: 'Jogar. Medir. Ajustar.', cycleText: 'Uma meta pequena e uma revisão honesta valem mais que uma sessão aleatória.', start: 'Um ponto de partida', how: 'Como usar o TF2Lab', intro: 'Transforme uma lista de logs em uma pergunta objetiva para o próximo treino.', focus: 'Escolha seu foco', tracks: 'Trilhas por classe', radar: 'classes no radar', soon: 'Em breve', tools: 'Ferramentas da comunidade', source: 'Dados bons começam na fonte certa.', sourceText: 'O TF2Lab organiza o caminho. Estas ferramentas continuam sendo parte essencial da cena.', next: 'Para a próxima sessão', tips: 'Dicas rápidas de treino'
+} : {
+  eyebrow: 'TF2Lab Academy', title: 'Improve with data and practice.', description: 'Use your matches to choose the next drill, understand your patterns, and build habits that show up on the scoreboard.', viewProfile: 'View my profile', basics: 'Start with the basics', cycle: 'Training cycle', cycleStrong: 'Play. Measure. Adjust.', cycleText: 'One small goal and an honest review beat a random session.', start: 'A starting point', how: 'How to use TF2Lab', intro: 'Turn a list of logs into one clear question for your next practice session.', focus: 'Choose your focus', tracks: 'Class tracks', radar: 'classes on the radar', soon: 'Coming soon', tools: 'Community tools', source: 'Good data starts at the right source.', sourceText: 'TF2Lab organizes the path. These tools remain an essential part of the scene.', next: 'For your next session', tips: 'Quick training tips'
+})
+const steps = computed(() => isPortuguese.value ? [
+  { title: 'Abra seu perfil', description: 'Pesquise sua SteamID e veja médias, tendências e as partidas que formam sua amostra.' }, { title: 'Encontre um padrão', description: 'Compare K/D, dano, cura e classes. Procure uma situação recorrente, não um jogo isolado.' }, { title: 'Treine uma coisa', description: 'Escolha um objetivo observável para a próxima sessão e volte aos dados depois de jogar.' }
+] : [
+  { title: 'Open your profile', description: 'Search your SteamID and review averages, trends, and the matches behind your sample.' }, { title: 'Find a pattern', description: 'Compare K/D, damage, healing, and classes. Look for a recurring situation, not one isolated game.' }, { title: 'Train one thing', description: 'Choose an observable goal for your next session and return to the data after you play.' }
+])
+const classes = computed(() => [
+  { name: 'Scout', short: 'SC', tone: 'red', focus: isPortuguese.value ? 'Movimento, mira e pressão' : 'Movement, aim, and pressure' }, { name: 'Soldier', short: 'SO', tone: 'orange', focus: isPortuguese.value ? 'Aberturas, dano e controle' : 'Openings, damage, and control' }, { name: 'Pyro', short: 'PY', tone: 'red', focus: isPortuguese.value ? 'Proteção e espaço' : 'Protection and space' }, { name: 'Demoman', short: 'DE', tone: 'blue', focus: isPortuguese.value ? 'Spam, traps e ritmo' : 'Spam, traps, and tempo' }, { name: 'Heavy', short: 'HE', tone: 'orange', focus: isPortuguese.value ? 'Sobrevivência e presença' : 'Survival and presence' }, { name: 'Engineer', short: 'EN', tone: 'blue', focus: isPortuguese.value ? 'Posicionamento e suporte' : 'Positioning and support' }, { name: 'Medic', short: 'ME', tone: 'blue', focus: isPortuguese.value ? 'Über, rotas e leitura' : 'Über, routes, and reads' }, { name: 'Sniper', short: 'SN', tone: 'orange', focus: isPortuguese.value ? 'Ângulos e impacto' : 'Angles and impact' }, { name: 'Spy', short: 'SP', tone: 'red', focus: isPortuguese.value ? 'Informação e timing' : 'Information and timing' }
+])
 
 const resources = [
   { name: 'logs.tf', description: 'Estatísticas detalhadas de partidas', url: 'https://logs.tf' },

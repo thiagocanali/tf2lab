@@ -15,15 +15,30 @@
       <span class="search-icon" aria-hidden="true">⌕</span>
       <input
         id="search-input"
+        ref="searchInput"
         v-model="query"
         type="search"
         placeholder="SteamID, player, or log ID"
         autocomplete="off"
+        enterkeyhint="search"
+        aria-describedby="search-help"
       >
+      <button
+        v-if="query"
+        type="button"
+        class="search-clear"
+        aria-label="Clear search"
+        @click="clearSearch"
+      >
+        Clear
+      </button>
       <button type="submit" :disabled="!query.trim() || loading">
         {{ loading ? 'Searching...' : 'Search' }}
       </button>
     </form>
+    <p id="search-help" class="search-help">
+      Pressione <kbd>/</kbd> para focar a busca e <kbd>Esc</kbd> para limpar.
+    </p>
 
     <!-- Loading skeletons -->
     <div v-if="loading" class="results-grid" aria-busy="true" aria-live="polite">
@@ -58,7 +73,7 @@
             <div class="result-card__head">
               <div class="player-info">
                 <div class="avatar-wrapper">
-                  <img v-if="p.avatarUrl" :src="p.avatarUrl" alt="" />
+                  <img v-if="p.avatarUrl" :src="p.avatarUrl" :alt="`${p.name} avatar`" />
                   <div v-else class="avatar-fallback">{{ getInitials(p.name) }}</div>
                 </div>
                 <div>
@@ -162,11 +177,11 @@
       </p>
       <div class="empty-state__suggestions">
         <p class="suggestions-label">Try searching for:</p>
-        <ul>
-          <li>SteamID64: <code>76561198000000001</code></li>
-          <li>Player name: <code>saxton</code></li>
-          <li>Log ID: <code>3690111</code></li>
-        </ul>
+        <div class="suggestion-list">
+          <button type="button" @click="useSuggestion('76561198000000001')">SteamID64: <code>76561198000000001</code></button>
+          <button type="button" @click="useSuggestion('saxton')">Player name: <code>saxton</code></button>
+          <button type="button" @click="useSuggestion('3690111')">Log ID: <code>3690111</code></button>
+        </div>
       </div>
     </section>
 
@@ -177,25 +192,27 @@
       <p>Enter a SteamID64, player name, or logs.tf log ID above to start.</p>
       <div class="empty-state__suggestions">
         <p class="suggestions-label">Examples:</p>
-        <ul>
-          <li>SteamID64: <code>76561198000000001</code></li>
-          <li>Player name: <code>saxton</code></li>
-          <li>Log ID: <code>3690111</code></li>
-        </ul>
+        <div class="suggestion-list">
+          <button type="button" @click="useSuggestion('76561198000000001')">SteamID64: <code>76561198000000001</code></button>
+          <button type="button" @click="useSuggestion('saxton')">Player name: <code>saxton</code></button>
+          <button type="button" @click="useSuggestion('3690111')">Log ID: <code>3690111</code></button>
+        </div>
       </div>
     </section>
 
     <!-- Pagination -->
     <nav v-if="!loading && totalPages > 1" class="pagination" aria-label="Pagination">
-      <button :disabled="page <= 1" @click="goToPage(page - 1)">← Previous</button>
-      <span class="pagination__label">Page {{ page }} of {{ totalPages }}</span>
-      <button :disabled="page >= totalPages" @click="goToPage(page + 1)">Next →</button>
+              <button type="button" :disabled="page <= 1" @click="goToPage(page - 1)">← Previous</button>
+              <span class="pagination__label" aria-live="polite">Page {{ page }} of {{ totalPages }}</span>
+              <button type="button" :disabled="page >= totalPages" @click="goToPage(page + 1)">Next →</button>
     </nav>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+
+const { t } = useLocale()
 import useLogsService from '~~/features/analytics/services/logsService'
 import type { PlayerLogReference } from '~~/features/player/types'
 
@@ -208,6 +225,7 @@ const route = useRoute()
 const router = useRouter()
 const service = useLogsService()
 
+const searchInput = ref<HTMLInputElement | null>(null)
 const query = ref<string>(typeof route.query.q === 'string' ? route.query.q : '')
 const results = ref<any[]>([])
 const players = ref<any[]>([])
@@ -218,6 +236,7 @@ const hasSearched = ref<boolean>(false)
 const lastQuery = ref<string>('')
 const queryType = ref<string>('')
 const searchError = ref(false)
+let searchRequestId = 0
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / PER_PAGE)))
 
@@ -237,8 +256,9 @@ function formatDate(timestamp: string): string {
 }
 
 function getInitials(name: string): string {
-  const parts = name.split(' ')
-  return parts.map((part) => part[0]).slice(0, 2).join('').toUpperCase()
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  const initials = parts.map((part) => part[0]).slice(0, 2).join('').toUpperCase()
+  return initials || '?'
 }
 
 function formatNumber(num: number): string {
@@ -251,6 +271,7 @@ async function runSearch(term: string, targetPage: number = DEFAULT_PAGE) {
   const trimmed = term.trim()
   if (!trimmed) return
 
+  const requestId = ++searchRequestId
   loading.value = true
   hasSearched.value = true
   lastQuery.value = trimmed
@@ -258,18 +279,22 @@ async function runSearch(term: string, targetPage: number = DEFAULT_PAGE) {
 
   try {
     const res = await service.search(trimmed, targetPage, PER_PAGE)
+    if (requestId !== searchRequestId) return
+
     results.value = (res?.results ?? res?.data ?? []) as any[]
     players.value = (res?.players ?? []) as any[]
     queryType.value = res?.queryType ?? ''
     page.value = res?.page ?? targetPage
     total.value = res?.total ?? results.value.length
-  } catch (err) {
+  } catch {
+    if (requestId !== searchRequestId) return
+
     results.value = []
     players.value = []
     total.value = 0
     searchError.value = true
   } finally {
-    loading.value = false
+    if (requestId === searchRequestId) loading.value = false
   }
 }
 
@@ -286,31 +311,65 @@ function syncRouteQuery(term: string, targetPage: number) {
 function onSubmit() {
   const term = query.value.trim()
   if (!term) return
-  page.value = DEFAULT_PAGE
   syncRouteQuery(term, DEFAULT_PAGE)
-  runSearch(term, DEFAULT_PAGE)
+}
+
+function clearSearch() {
+  query.value = ''
+  results.value = []
+  players.value = []
+  total.value = 0
+  hasSearched.value = false
+  lastQuery.value = ''
+  queryType.value = ''
+  searchError.value = false
+  syncRouteQuery('', DEFAULT_PAGE)
+}
+
+function useSuggestion(term: string) {
+  query.value = term
+  syncRouteQuery(term, DEFAULT_PAGE)
 }
 
 function goToPage(targetPage: number) {
   if (targetPage < 1 || targetPage > totalPages.value) return
-  page.value = targetPage
   syncRouteQuery(query.value.trim(), targetPage)
-  runSearch(query.value, targetPage)
   if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 watch(
-  () => route.query.q,
-  (newQ) => {
+  () => [route.query.q, route.query.page],
+  ([newQ, newPage]) => {
     const next = typeof newQ === 'string' ? newQ : ''
-    if (next === query.value) return
-    query.value = next
+    const nextPage = Number(newPage ?? DEFAULT_PAGE)
+    page.value = Number.isFinite(nextPage) && nextPage > 0 ? nextPage : DEFAULT_PAGE
+
+    if (next !== query.value) query.value = next
     if (next.trim()) runSearch(next, page.value)
   }
 )
 
+function handleSearchShortcut(event: KeyboardEvent) {
+  const target = event.target as HTMLElement | null
+  const isTyping = target?.matches('input, textarea, select, [contenteditable="true"]')
+
+  if (event.key === '/' && !isTyping) {
+    event.preventDefault()
+    searchInput.value?.focus()
+  }
+
+  if (event.key === 'Escape' && document.activeElement === searchInput.value && query.value) {
+    clearSearch()
+  }
+}
+
 onMounted(() => {
+  window.addEventListener('keydown', handleSearchShortcut)
   if (query.value.trim()) runSearch(query.value, page.value)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleSearchShortcut)
 })
 </script>
 
@@ -347,6 +406,23 @@ onMounted(() => {
   font-size: 1rem;
   max-width: 36rem;
 }
+.search-help {
+  margin: -0.65rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+.search-help kbd {
+  display: inline-flex;
+  min-width: 1.35rem;
+  justify-content: center;
+  padding: 0.08rem 0.3rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-bottom-width: 2px;
+  border-radius: 0.3rem;
+  color: var(--text-soft);
+  font: inherit;
+  font-weight: 700;
+}
 
 .search-form {
   display: flex;
@@ -382,6 +458,18 @@ onMounted(() => {
 }
 .search-form button:hover:not(:disabled) { background: #ff765d; transform: translateY(-1px); }
 .search-form button:disabled { cursor: not-allowed; opacity: 0.45; }
+.search-form .search-clear {
+  padding: 0.55rem 0.7rem;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.search-form .search-clear:hover { background: rgba(255, 255, 255, 0.08); color: var(--text); transform: none; }
+.search-form input:focus-visible,
+.search-form button:focus-visible,
+.pagination button:focus-visible,
+.action-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 
 .results-grid {
   display: grid;
@@ -580,25 +668,31 @@ onMounted(() => {
   font-size: 0.85rem;
   font-weight: 600;
 }
-.empty-state__suggestions ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+.suggestion-list {
   display: grid;
   gap: 0.5rem;
 }
-.empty-state__suggestions li {
+.suggestion-list button {
+  width: 100%;
   padding: 0.6rem 0.9rem;
-  background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 8px;
-  font-size: 0.9rem;
+  background: rgba(255, 255, 255, 0.03);
   color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
   transition: background 0.2s, border-color 0.2s;
 }
-.empty-state__suggestions li:hover {
+.suggestion-list button:hover,
+.suggestion-list button:focus-visible {
   background: rgba(255, 79, 60, 0.08);
   border-color: rgba(255, 79, 60, 0.2);
+}
+.suggestion-list button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 .empty-state__suggestions code {
   font-family: var(--font-family-mono);

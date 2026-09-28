@@ -3,55 +3,53 @@
     <section class="competition-hero" aria-labelledby="competition-title">
       <div class="hero-grid" aria-hidden="true" />
       <div class="hero-copy">
-        <p class="eyebrow"><span class="eyebrow-mark" aria-hidden="true">VS</span> TF2Lab Competition</p>
-        <h1 id="competition-title">Ligas, times e partidas em um só lugar.</h1>
-        <p class="hero-description">
-          Encontre onde jogar, acompanhe a cena brasileira e prepare cada partida com contexto competitivo, do primeiro PUG à próxima temporada.
-        </p>
+        <p class="eyebrow"><span class="eyebrow-mark" aria-hidden="true">VS</span> {{ copy.eyebrow }}</p>
+        <h1 id="competition-title">{{ copy.title }}</h1>
+        <p class="hero-description">{{ copy.description }}</p>
         <div class="hero-actions">
-          <a href="#cena" class="primary-link">Explorar a cena <span aria-hidden="true">-&gt;</span></a>
-          <NuxtLink to="/search" class="secondary-link">Analisar um jogador</NuxtLink>
+          <a href="#cena" class="primary-link">{{ copy.explore }} <span aria-hidden="true">-&gt;</span></a>
+          <NuxtLink to="/search" class="secondary-link">{{ copy.analyze }}</NuxtLink>
         </div>
       </div>
 
-      <aside class="match-board" aria-label="Visão do módulo Competition">
-        <div class="board-header"><span class="live-dot" /> Match board <span>TF2Lab</span></div>
-        <div class="board-row"><strong>LEAGUES</strong><span>BR + INTL</span></div>
-        <div class="board-row"><strong>TEAMS</strong><span>SCOUT / ORGANIZE</span></div>
-        <div class="board-row"><strong>MATCHES</strong><span>PREPARE / REVIEW</span></div>
-        <div class="board-footer">Dados públicos. Contexto competitivo.</div>
+      <aside class="match-board" :aria-label="copy.board">
+        <div class="board-header"><span class="live-dot" /> {{ copy.board }} <span>TF2Lab</span></div>
+        <div class="board-row"><strong>{{ copy.leagues }}</strong><span>BR + INTL</span></div>
+        <div class="board-row"><strong>{{ copy.teams }}</strong><span>SCOUT / ORGANIZE</span></div>
+        <div class="board-row"><strong>{{ copy.matches }}</strong><span>PREPARE / REVIEW</span></div>
+        <div class="board-footer">{{ isPortuguese ? 'Dados públicos. Contexto competitivo.' : 'Public data. Competitive context.' }}</div>
       </aside>
     </section>
 
     <section id="cena" class="competition-section" aria-labelledby="scene-title">
       <header class="section-heading">
         <div>
-          <p class="section-kicker">Onde a comunidade joga</p>
-          <h2 id="scene-title">Cena competitiva</h2>
+          <p class="section-kicker">{{ isPortuguese ? 'Onde a comunidade joga' : 'Where the community plays' }}</p>
+          <h2 id="scene-title">{{ copy.scene }}</h2>
         </div>
-        <p class="section-intro">A cena brasileira vem primeiro: encontre ligas, duelos e PUGs em suas plataformas oficiais.</p>
+        <p class="section-intro">{{ copy.sceneIntro }}</p>
       </header>
 
       <div class="scene-group">
-        <div class="group-label"><span class="group-dot group-dot--red" /> Brasil em foco</div>
+        <div class="group-label"><span class="group-dot group-dot--red" /> {{ copy.brazil }}</div>
         <div class="scene-grid">
           <a v-for="card in brazilScene" :key="card.name" :href="card.url" target="_blank" rel="noopener noreferrer" class="scene-card scene-card--red">
             <div class="scene-card-top"><span class="scene-mark">{{ card.mark }}</span><span class="external-mark" aria-hidden="true">↗</span></div>
             <h3>{{ card.name }}</h3>
             <p>{{ card.description }}</p>
-            <span class="visit-link">Visitar site</span>
+            <span class="visit-link">{{ copy.visit }}</span>
           </a>
         </div>
       </div>
 
       <div class="scene-group scene-group--international">
-        <div class="group-label"><span class="group-dot group-dot--blue" /> Cena internacional</div>
+        <div class="group-label"><span class="group-dot group-dot--blue" /> {{ copy.international }}</div>
         <div class="scene-grid">
           <a v-for="card in internationalScene" :key="card.name" :href="card.url" target="_blank" rel="noopener noreferrer" class="scene-card scene-card--blue">
             <div class="scene-card-top"><span class="scene-mark">{{ card.mark }}</span><span class="external-mark" aria-hidden="true">↗</span></div>
             <h3>{{ card.name }}</h3>
             <p>{{ card.description }}</p>
-            <span class="visit-link">Visitar site</span>
+            <span class="visit-link">{{ copy.visit }}</span>
           </a>
         </div>
       </div>
@@ -60,9 +58,9 @@
     <section class="competition-section roadmap-section" aria-labelledby="roadmap-title">
       <div class="roadmap-panel">
         <div class="roadmap-copy">
-          <p class="section-kicker">Próximos passos</p>
-          <h2 id="roadmap-title">O que vem no TF2Lab Competition</h2>
-          <p>Uma camada simples para acompanhar a competição sem substituir as plataformas que já sustentam a comunidade.</p>
+          <p class="section-kicker">{{ copy.next }}</p>
+          <h2 id="roadmap-title">{{ copy.roadmap }}</h2>
+          <p>{{ copy.roadmapText }}</p>
         </div>
         <div class="roadmap-list">
           <article v-for="(item, index) in roadmap" :key="item.title" class="roadmap-item">
@@ -76,8 +74,8 @@
     <section class="competition-section api-note" aria-labelledby="api-title">
       <div class="api-icon" aria-hidden="true">API</div>
       <div>
-        <p class="section-kicker">Integração no horizonte</p>
-        <h2 id="api-title">Mais contexto para cada partida</h2>
+        <p class="section-kicker">{{ copy.horizon }}</p>
+        <h2 id="api-title">{{ copy.context }}</h2>
         <p>Esta página reúne os pontos de entrada oficiais da comunidade, sem fetch de API. O TF2Lab adiciona contexto e ferramentas sem substituir as plataformas que já sustentam a cena.</p>
       </div>
     </section>
@@ -85,16 +83,19 @@
 </template>
 
 <script setup lang="ts">
+const { locale } = useLocale()
+const isPortuguese = computed(() => locale.value === 'pt')
+const copy = computed(() => isPortuguese.value ? { eyebrow: 'Competição do TF2Lab', title: 'Ligas, times e partidas em um só lugar.', description: 'Encontre onde jogar, acompanhe a cena brasileira e prepare cada partida com contexto competitivo, do primeiro PUG à próxima temporada.', explore: 'Explorar a cena', analyze: 'Analisar um jogador', board: 'Painel de partidas', leagues: 'LIGAS', teams: 'TIMES', matches: 'PARTIDAS', scene: 'Cena competitiva', sceneIntro: 'A cena brasileira vem primeiro: encontre ligas, duelos e PUGs em suas plataformas oficiais.', brazil: 'Brasil em foco', international: 'Cena internacional', visit: 'Visitar site', next: 'Próximos passos', roadmap: 'O que vem no TF2Lab Competition', roadmapText: 'Uma camada simples para acompanhar a competição sem substituir as plataformas que já sustentam a comunidade.', horizon: 'Integração no horizonte', context: 'Mais contexto para cada partida' } : { eyebrow: 'TF2Lab Competition', title: 'Leagues, teams, and matches in one place.', description: 'Find where to play, follow the Brazilian scene, and prepare every match with competitive context, from your first PUG to the next season.', explore: 'Explore the scene', analyze: 'Analyze a player', board: 'Match board', leagues: 'LEAGUES', teams: 'TEAMS', matches: 'MATCHES', scene: 'Competitive scene', sceneIntro: 'Start with Brazil: find leagues, duels, and PUGs on their official platforms.', brazil: 'Brazil in focus', international: 'International scene', visit: 'Visit site', next: 'Next steps', roadmap: 'What is coming to TF2Lab Competition', roadmapText: 'A simple layer for following competition without replacing the platforms that already support the community.', horizon: 'Integration on the horizon', context: 'More context for every match' })
 const brazilScene = [
-  { name: 'FBTF', mark: 'BR', description: 'Liga brasileira com campeonatos e competição organizada para a comunidade.', url: 'https://fbtf.tf/' },
-  { name: 'Brasil Fortress', mark: 'BR', description: 'Acompanhe a cena competitiva brasileira e suas competições.', url: 'https://bf.sonikro.com/' },
-  { name: 'MGE.tf', mark: 'MGE', description: 'Duelos e treino de MGE para jogadores da América do Sul.', url: 'https://mge.tf/' },
-  { name: 'br.tf2pickup.org', mark: 'PUG', description: 'Encontre PUGs brasileiros e pratique em partidas organizadas.', url: 'https://br.tf2pickup.org' }
+  { name: 'FBTF', mark: 'BR', description: isPortuguese.value ? 'Liga brasileira com campeonatos e competição organizada para a comunidade.' : 'Brazilian league with organized championships and competition for the community.', url: 'https://fbtf.tf/' },
+  { name: 'Brasil Fortress', mark: 'BR', description: isPortuguese.value ? 'Acompanhe a cena competitiva brasileira e suas competições.' : 'Follow the Brazilian competitive scene and its competitions.', url: 'https://bf.sonikro.com/' },
+  { name: 'MGE.tf', mark: 'MGE', description: isPortuguese.value ? 'Duelos e treino de MGE para jogadores da América do Sul.' : 'MGE duels and practice for South American players.', url: 'https://mge.tf/' },
+  { name: 'br.tf2pickup.org', mark: 'PUG', description: isPortuguese.value ? 'Encontre PUGs brasileiros e pratique em partidas organizadas.' : 'Find Brazilian PUGs and practice in organized matches.', url: 'https://br.tf2pickup.org' }
 ]
 
 const internationalScene = [
-  { name: 'ETF2L', mark: 'EU', description: 'Uma das principais ligas de Team Fortress 2 da Europa.', url: 'https://etf2l.org' },
-  { name: 'RGL', mark: 'NA', description: 'Ligas, mixes e eventos para a cena norte-americana.', url: 'https://rgl.gg' }
+  { name: 'ETF2L', mark: 'EU', description: isPortuguese.value ? 'Uma das principais ligas de Team Fortress 2 da Europa.' : 'One of Europe’s leading Team Fortress 2 leagues.', url: 'https://etf2l.org' },
+  { name: 'RGL', mark: 'NA', description: isPortuguese.value ? 'Ligas, mixes e eventos para a cena norte-americana.' : 'Leagues, mixes, and events for the North American scene.', url: 'https://rgl.gg' }
 ]
 
 const roadmap = [

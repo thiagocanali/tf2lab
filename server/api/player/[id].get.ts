@@ -237,7 +237,9 @@ function buildPerformanceTrend(base: number, labelPrefix = 'M') {
 
 export default defineEventHandler(async (event) => {
   const id = String(getRouterParam(event, 'id') ?? '')
-  if (!id) return { error: 'Missing player id' }
+  if (!/^7656119\d{10}$/.test(id)) {
+    throw createError({ statusCode: 400, statusMessage: 'Invalid SteamID64' })
+  }
 
   const query = getQuery(event)
   const requestedLimit = Number(query.limit ?? ANALYZED_LOG_LIMIT)
