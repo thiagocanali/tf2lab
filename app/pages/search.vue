@@ -96,7 +96,7 @@
               </div>
               <div class="stat" v-if="p.overview.totalDamage">
                 <span>{{ copy.damage }}</span>
-                <strong>{{ p.overview.totalDamage.toLocaleString() }}</strong>
+                <strong>{{ p.overview.totalDamage.toLocaleString(locale === 'pt' ? 'pt-BR' : 'en-US') }}</strong>
               </div>
             </div>
             <div class="result-card__actions">
