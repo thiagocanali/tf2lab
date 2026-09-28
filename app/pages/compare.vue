@@ -1,16 +1,16 @@
 <template>
   <div class="page-compare">
-    <Breadcrumbs :items="[{ label: 'Compare' }]" />
+    <Breadcrumbs :items="[{ label: t.compare.breadcrumb }]" />
 
     <header class="compare-header">
-      <p class="eyebrow">TF2Lab comparison</p>
-      <h1>Compare two players.</h1>
-      <p>Coloque dois SteamID64 lado a lado e veja onde cada jogador se destaca.</p>
+      <p class="eyebrow">{{ t.compare.eyebrow }}</p>
+      <h1>{{ t.compare.title }}</h1>
+      <p>{{ t.compare.description }}</p>
     </header>
 
     <form class="compare-form" @submit.prevent="comparePlayers">
       <div class="player-input player-picker">
-        <label for="player-a">Player A</label>
+        <label for="player-a">{{ t.compare.playerA }}</label>
         <input id="player-a" v-model.trim="playerAQuery" inputmode="search" placeholder="Nome ou SteamID64" autocomplete="off" role="combobox" :aria-expanded="activePicker === 'a' && suggestions.length > 0" aria-controls="player-a-suggestions" :aria-invalid="Boolean(formError && !isValidSteamId(playerAId))" @focus="activePicker = 'a'; searchPlayers(playerAQuery)" @input="onPlayerInput('a')" @keydown.esc="closeSuggestions">
         <div v-if="activePicker === 'a' && suggestions.length" id="player-a-suggestions" class="player-suggestions" role="listbox">
           <button v-for="player in suggestions" :key="player.steamId" type="button" role="option" class="player-suggestion" @click="selectPlayer('a', player)">
@@ -20,7 +20,7 @@
       </div>
       <button type="button" class="swap-button" aria-label="Trocar jogadores de posição" @click="swapPlayers">↔</button>
       <div class="player-input player-picker">
-        <label for="player-b">Player B</label>
+        <label for="player-b">{{ t.compare.playerB }}</label>
         <input id="player-b" v-model.trim="playerBQuery" inputmode="search" placeholder="Nome ou SteamID64" autocomplete="off" role="combobox" :aria-expanded="activePicker === 'b' && suggestions.length > 0" aria-controls="player-b-suggestions" :aria-invalid="Boolean(formError && !isValidSteamId(playerBId))" @focus="activePicker = 'b'; searchPlayers(playerBQuery)" @input="onPlayerInput('b')" @keydown.esc="closeSuggestions">
         <div v-if="activePicker === 'b' && suggestions.length" id="player-b-suggestions" class="player-suggestions" role="listbox">
           <button v-for="player in suggestions" :key="player.steamId" type="button" role="option" class="player-suggestion" @click="selectPlayer('b', player)">
@@ -29,18 +29,18 @@
         </div>
       </div>
       <label class="window-input" for="comparison-window">
-        <span>Janela</span>
+        <span>{{ t.compare.window }}</span>
         <select id="comparison-window" v-model="comparisonWindow">
-          <option v-for="option in windowOptions" :key="option" :value="option">Últimos {{ option }} jogos</option>
+          <option v-for="option in windowOptions" :key="option" :value="option">{{ t.compare.games.replace('{n}', String(option)) }}</option>
         </select>
       </label>
-      <button type="submit" :disabled="!canCompare || loading">{{ loading ? 'Comparando...' : 'Compare players' }}</button>
-      <button v-if="profiles.length === 2" type="button" class="clear-button" @click="clearComparison">Limpar</button>
+      <button type="submit" :disabled="!canCompare || loading">{{ loading ? t.compare.comparing : t.compare.compare }}</button>
+      <button v-if="profiles.length === 2" type="button" class="clear-button" @click="clearComparison">{{ t.compare.clear }}</button>
     </form>
 
     <p v-if="formError" class="form-error" role="alert">{{ formError }}</p>
 
-    <section v-if="loading" class="comparison-grid" aria-busy="true" aria-label="Carregando comparação">
+    <section v-if="loading" class="comparison-grid" aria-busy="true" :aria-label="t.compare.loading">
       <article v-for="n in 2" :key="n" class="comparison-card skeleton-card">
         <div class="skeleton-line skeleton-line--xl" />
         <div class="skeleton-line" />
@@ -54,24 +54,24 @@
           <div class="player-heading">
             <div class="avatar-fallback">{{ initials(profile.name) }}</div>
             <div>
-              <p class="eyebrow">Player {{ index === 0 ? 'A' : 'B' }}</p>
+              <p class="eyebrow">{{ index === 0 ? t.compare.playerA : t.compare.playerB }}</p>
               <h2>{{ profile.name }}</h2>
               <span>{{ profile.steamId }}</span>
             </div>
           </div>
-          <NuxtLink class="action-link" :to="`/player/${profile.steamId}`">View full profile →</NuxtLink>
+          <NuxtLink class="action-link" :to="`/player/${profile.steamId}`">{{ t.compare.fullProfile }}</NuxtLink>
         </article>
       </div>
 
       <div class="comparison-summary" aria-label="Resumo da comparação">
-        <p class="eyebrow">Resumo rápido</p>
-        <p><strong>{{ profiles[0].name }}</strong> lidera em <strong>{{ winningMetrics(0) }}</strong>, enquanto <strong>{{ profiles[1].name }}</strong> lidera em <strong>{{ winningMetrics(1) }}</strong>.</p>
+        <p class="eyebrow">{{ t.compare.summary }}</p>
+        <p><strong>{{ profiles[0].name }}</strong> {{ t.compare.leads }} <strong>{{ winningMetrics(0) }}</strong>, enquanto <strong>{{ profiles[1].name }}</strong> {{ t.compare.leads }} <strong>{{ winningMetrics(1) }}</strong>.</p>
       </div>
 
       <div class="metrics-table-wrap">
         <table class="metrics-table">
-          <caption>Performance comparison</caption>
-          <thead><tr><th scope="col">Metric</th><th scope="col">{{ profiles[0].name }}</th><th scope="col">{{ profiles[1].name }}</th></tr></thead>
+          <caption>{{ t.compare.table }}</caption>
+          <thead><tr><th scope="col">{{ t.compare.metric }}</th><th scope="col">{{ profiles[0].name }}</th><th scope="col">{{ profiles[1].name }}</th></tr></thead>
           <tbody>
             <tr v-for="metric in metrics" :key="metric.key">
               <th scope="row">{{ metric.label }}</th>
@@ -85,11 +85,11 @@
 
     <section v-else class="empty-state">
       <p class="empty-state__icon" aria-hidden="true">VS</p>
-      <h2>Escolha dois jogadores</h2>
-      <p>Use SteamID64 para criar uma comparação consistente entre perfis analisados pelo TF2Lab.</p>
+      <h2>{{ t.compare.choose }}</h2>
+      <p>{{ t.compare.chooseText }}</p>
       <div class="empty-state__suggestions">
-        <p class="suggestions-label">Exemplo:</p>
-        <button type="button" @click="playerAId = '76561198000000001'; playerBId = '76561198000000002'">Carregar dois jogadores de exemplo</button>
+        <p class="suggestions-label">{{ t.compare.example }}</p>
+        <button type="button" @click="playerAId = '76561198000000001'; playerBId = '76561198000000002'">{{ t.compare.loadExample }}</button>
       </div>
     </section>
   </div>
@@ -122,14 +122,14 @@ const comparisonWindow = ref(windowOptions.includes(queryWindow) ? queryWindow :
 const formError = ref('')
 const isValidSteamId = (id: string) => /^7656119\d{10}$/.test(id)
 const canCompare = computed(() => isValidSteamId(playerAId.value) && isValidSteamId(playerBId.value) && playerAId.value !== playerBId.value)
-const metrics: Metric[] = [
-  { key: 'matches', label: 'Matches' },
-  { key: 'kdRatio', label: 'K/D', decimals: 2 },
-  { key: 'totalKills', label: 'Kills' },
-  { key: 'totalDeaths', label: 'Deaths' },
-  { key: 'totalDamage', label: 'Damage' },
-  { key: 'totalHeals', label: 'Heals' }
-]
+  const metrics = computed<Metric[]>(() => [
+    { key: 'matches', label: t.value.compare.matches },
+    { key: 'kdRatio', label: 'K/D', decimals: 2 },
+    { key: 'totalKills', label: t.value.compare.kills },
+    { key: 'totalDeaths', label: t.value.compare.deaths },
+    { key: 'totalDamage', label: t.value.compare.damage },
+    { key: 'totalHeals', label: t.value.compare.heals }
+  ])
 
 function initials(name: string) { return name.split(/\s+/).map((part) => part[0]).slice(0, 2).join('').toUpperCase() || '?' }
 function value(profile: Profile, key: string) { return Number(profile.overview?.[key] ?? 0) }
@@ -174,7 +174,7 @@ function winnerClass(key: string, index: number) {
 }
 
 function winningMetrics(index: number) {
-  return metrics.filter((metric) => winnerClass(metric.key, index) === 'is-winner').map((metric) => metric.label).join(', ') || 'nenhum indicador'
+  return metrics.value.filter((metric) => winnerClass(metric.key, index) === 'is-winner').map((metric) => metric.label).join(', ') || t.value.compare.none
 }
 
 function swapPlayers() {
@@ -199,11 +199,11 @@ function clearComparison() {
 
 async function comparePlayers() {
   if (!isValidSteamId(playerAId.value) || !isValidSteamId(playerBId.value)) {
-    formError.value = 'Informe dois SteamID64 válidos com 17 dígitos.'
+    formError.value = t.value.compare.invalid
     return
   }
   if (playerAId.value === playerBId.value) {
-    formError.value = 'Escolha dois jogadores diferentes.'
+    formError.value = t.value.compare.same
     return
   }
   loading.value = true; formError.value = ''; profiles.value = []
@@ -211,7 +211,7 @@ async function comparePlayers() {
     const response = await Promise.all([playerAId.value, playerBId.value].map((id) => $fetch<Profile>(`/api/player/${encodeURIComponent(id)}`, { query: { limit: comparisonWindow.value } })))
     profiles.value = response
     await router.replace({ query: { a: playerAId.value, b: playerBId.value, window: String(comparisonWindow.value) } })
-  } catch { formError.value = 'Não foi possível carregar um dos perfis. Verifique os SteamID64 e tente novamente.' }
+  } catch { formError.value = t.value.compare.failed }
   finally { loading.value = false }
 }
 </script>
