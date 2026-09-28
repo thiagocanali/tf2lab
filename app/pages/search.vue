@@ -1,24 +1,22 @@
 <template>
   <div class="page-search">
-    <Breadcrumbs :items="[{ label: 'Search' }]" />
+    <Breadcrumbs :items="[{ label: copy.breadcrumb }]" />
 
     <header class="search-header">
-      <p class="eyebrow"><span aria-hidden="true">⌕</span> TF2Lab search</p>
-      <h1>Find players & logs.</h1>
-      <p class="search-description">
-        Search by SteamID64, player name, or logs.tf log ID.
-      </p>
+      <p class="eyebrow"><span aria-hidden="true">⌕</span> {{ copy.eyebrow }}</p>
+      <h1>{{ copy.title }}</h1>
+      <p class="search-description">{{ copy.description }}</p>
     </header>
 
     <form class="search-form" :aria-busy="loading" @submit.prevent="onSubmit">
-      <label class="sr-only" for="search-input">Search</label>
+      <label class="sr-only" for="search-input">{{ copy.label }}</label>
       <span class="search-icon" aria-hidden="true">⌕</span>
       <input
         id="search-input"
         ref="searchInput"
         v-model="query"
         type="search"
-        placeholder="SteamID, player, or log ID"
+        :placeholder="copy.placeholder"
         autocomplete="off"
         enterkeyhint="search"
         aria-describedby="search-help"
@@ -27,17 +25,17 @@
         v-if="query"
         type="button"
         class="search-clear"
-        aria-label="Clear search"
+        :aria-label="copy.clear"
         @click="clearSearch"
       >
-        Clear
+        {{ copy.clear }}
       </button>
       <button type="submit" :disabled="!query.trim() || loading">
-        {{ loading ? 'Searching...' : 'Search' }}
+        {{ loading ? copy.searching : copy.search }}
       </button>
     </form>
     <p id="search-help" class="search-help">
-      Pressione <kbd>/</kbd> para focar a busca e <kbd>Esc</kbd> para limpar.
+      {{ copy.help.split(' / ')[0] }} <kbd>/</kbd> {{ copy.help.split(' / ')[1] }}
     </p>
 
     <!-- Loading skeletons -->
@@ -53,17 +51,17 @@
     <!-- Results: players are the primary result, logs provide context -->
     <section v-else-if="searchError" class="empty-state empty-state--error" role="alert">
       <p class="empty-state__icon" aria-hidden="true">!</p>
-      <h2>Search temporarily unavailable</h2>
-      <p>We couldn't reach the logs.tf search service. Check your connection and try again.</p>
-      <button type="button" class="action-link action-link--primary" @click="runSearch(lastQuery)">Try again</button>
+      <h2>{{ copy.unavailable }}</h2>
+      <p>{{ copy.unavailableText }}</p>
+      <button type="button" class="action-link action-link--primary" @click="runSearch(lastQuery)">{{ copy.retry }}</button>
     </section>
 
     <section v-else-if="hasResults" class="result-groups" aria-live="polite">
       <section v-if="players.length" class="result-group result-group--players">
         <div class="result-group__header">
           <div>
-            <p class="eyebrow">Primary results</p>
-            <h2>Players found</h2>
+            <p class="eyebrow">{{ copy.primary }}</p>
+            <h2>{{ copy.players }}</h2>
           </div>
           <span class="result-group__count">{{ players.length }}</span>
         </div>
@@ -81,11 +79,11 @@
                   <span class="result-card__id">SteamID: {{ p.steamId }}</span>
                 </div>
               </div>
-              <span v-if="queryType === 'steamid'" class="badge badge--success">Exact match</span>
+              <span v-if="queryType === 'steamid'" class="badge badge--success">{{ copy.exact }}</span>
             </div>
             <div class="result-card__meta player-stats">
               <div class="stat" v-if="p.overview.matches">
-                <span>Matches</span>
+                <span>{{ copy.matches }}</span>
                 <strong>{{ p.overview.matches }}</strong>
               </div>
               <div class="stat" v-if="p.overview.kdRatio !== undefined">
@@ -93,17 +91,17 @@
                 <strong>{{ p.overview.kdRatio.toFixed(2) }}</strong>
               </div>
               <div class="stat" v-if="p.overview.totalKills">
-                <span>Kills</span>
+                <span>{{ copy.kills }}</span>
                 <strong>{{ p.overview.totalKills }}</strong>
               </div>
               <div class="stat" v-if="p.overview.totalDamage">
-                <span>Damage</span>
+                <span>{{ copy.damage }}</span>
                 <strong>{{ p.overview.totalDamage.toLocaleString() }}</strong>
               </div>
             </div>
             <div class="result-card__actions">
               <NuxtLink class="action-link action-link--primary" :to="`/player/${p.steamId ?? p.id}`">
-                View player profile →
+                {{ copy.profile }}
               </NuxtLink>
             </div>
           </article>
@@ -113,14 +111,14 @@
       <section v-if="results.length" class="result-group result-group--logs">
         <div class="result-group__header">
           <div>
-            <p class="eyebrow">Secondary results</p>
-            <h2>Related logs</h2>
+<p class="eyebrow">{{ copy.secondary }}</p>
+          <h2>{{ copy.related }}</h2>
           </div>
           <span class="result-group__count">{{ results.length }}</span>
         </div>
 
         <p v-if="queryType === 'playername' && players.length === 0" class="player-search-hint">
-          Related logs found, but no player nick matched this search. Try another alias or the SteamID64.
+          {{ copy.hint }}
         </p>
 
         <div class="results-grid results-grid--logs">
@@ -130,19 +128,19 @@
               <span v-if="r.url" class="result-card__id">#{{ r.id }}</span>
             </div>
             <div class="result-card__meta">
-              <span v-if="r.map">Map: <strong>{{ r.map }}</strong></span>
+              <span v-if="r.map">{{ copy.map }}: <strong>{{ r.map }}</strong></span>
               <span v-if="r.timestamp">• {{ formatDate(r.timestamp) }}</span>
             </div>
             <div class="result-card__actions">
               <NuxtLink class="action-link action-link--primary" :to="`/log/${r.id}`">
-                View log
+                {{ copy.viewLog }}
               </NuxtLink>
               <NuxtLink
                 v-if="r.players?.[0]?.steamid || r.players?.[0]?.steamId"
                 class="action-link"
                 :to="`/player/${r.players[0].steamid ?? r.players[0].steamId}`"
               >
-                Player profile
+                {{ copy.playerProfile }}
               </NuxtLink>
               <a
                 v-if="r.url"
@@ -151,7 +149,7 @@
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                Open on logs.tf ↗
+                {{ copy.openLogs }}
               </a>
             </div>
           </article>
@@ -162,21 +160,21 @@
     <!-- Empty state: searched but nothing found -->
     <section v-else-if="hasSearched" class="empty-state">
       <p class="empty-state__icon" aria-hidden="true">∅</p>
-      <h2>No results for "{{ lastQuery }}"</h2>
+      <h2>{{ copy.noResults }} "{{ lastQuery }}"</h2>
       <p v-if="queryType === 'steamid'">
-        This SteamID64 wasn't found in logs.tf. Make sure it's a valid 17-digit SteamID64 (starts with 7656119).
+        {{ copy.emptySteamId }}
       </p>
       <p v-else-if="queryType === 'logid'">
-        Log ID <code>{{ lastQuery }}</code> not found on logs.tf.
+        {{ copy.emptyLogId.replace('{id}', lastQuery) }}
       </p>
       <p v-else-if="queryType === 'playername'">
-        No player cards matched "<strong>{{ lastQuery }}</strong>" in the logs.tf sample. Try an exact alias or SteamID64 for a reliable profile match.
+        {{ copy.emptyPlayer.replace('{name}', lastQuery) }}
       </p>
       <p v-else>
         Try a different SteamID, player name, or log ID.
       </p>
       <div class="empty-state__suggestions">
-        <p class="suggestions-label">Try searching for:</p>
+        <p class="suggestions-label">{{ copy.suggestions }}</p>
         <div class="suggestion-list">
           <button type="button" @click="useSuggestion('76561198000000001')">SteamID64: <code>76561198000000001</code></button>
           <button type="button" @click="useSuggestion('saxton')">Player name: <code>saxton</code></button>
@@ -188,10 +186,10 @@
     <!-- Initial state: never searched -->
     <section v-else class="empty-state">
       <p class="empty-state__icon" aria-hidden="true">⌕</p>
-      <h2>Search the TF2Lab log archive</h2>
-      <p>Enter a SteamID64, player name, or logs.tf log ID above to start.</p>
+      <h2>{{ copy.archive }}</h2>
+      <p>{{ copy.start }}</p>
       <div class="empty-state__suggestions">
-        <p class="suggestions-label">Examples:</p>
+        <p class="suggestions-label">{{ copy.examples }}</p>
         <div class="suggestion-list">
           <button type="button" @click="useSuggestion('76561198000000001')">SteamID64: <code>76561198000000001</code></button>
           <button type="button" @click="useSuggestion('saxton')">Player name: <code>saxton</code></button>
@@ -201,10 +199,10 @@
     </section>
 
     <!-- Pagination -->
-    <nav v-if="!loading && totalPages > 1" class="pagination" aria-label="Pagination">
-              <button type="button" :disabled="page <= 1" @click="goToPage(page - 1)">← Previous</button>
-              <span class="pagination__label" aria-live="polite">Page {{ page }} of {{ totalPages }}</span>
-              <button type="button" :disabled="page >= totalPages" @click="goToPage(page + 1)">Next →</button>
+    <nav v-if="!loading && totalPages > 1" class="pagination" :aria-label="copy.pagination">
+              <button type="button" :disabled="page <= 1" @click="goToPage(page - 1)">{{ copy.previous }}</button>
+              <span class="pagination__label" aria-live="polite">{{ copy.page }} {{ page }} {{ copy.of }} {{ totalPages }}</span>
+              <button type="button" :disabled="page >= totalPages" @click="goToPage(page + 1)">{{ copy.next }}</button>
     </nav>
   </div>
 </template>
@@ -212,7 +210,8 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
-const { t } = useLocale()
+const { t, locale } = useLocale()
+const copy = computed(() => t.value.search)
 import useLogsService from '~~/features/analytics/services/logsService'
 import type { PlayerLogReference } from '~~/features/player/types'
 
