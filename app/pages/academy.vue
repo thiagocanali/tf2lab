@@ -12,7 +12,7 @@
         </div>
       </div>
 
-      <aside class="hero-note" aria-label="Ciclo de treino">
+      <aside class="hero-note" :aria-label="copy.cycle">
         <span class="note-label">{{ copy.cycle }}</span>
         <strong>{{ copy.cycleStrong }}</strong>
         <div class="cycle-line" aria-hidden="true">
@@ -114,19 +114,29 @@ const classes = computed(() => [
   { name: 'Scout', short: 'SC', tone: 'red', focus: isPortuguese.value ? 'Movimento, mira e pressão' : 'Movement, aim, and pressure' }, { name: 'Soldier', short: 'SO', tone: 'orange', focus: isPortuguese.value ? 'Aberturas, dano e controle' : 'Openings, damage, and control' }, { name: 'Pyro', short: 'PY', tone: 'red', focus: isPortuguese.value ? 'Proteção e espaço' : 'Protection and space' }, { name: 'Demoman', short: 'DE', tone: 'blue', focus: isPortuguese.value ? 'Spam, traps e ritmo' : 'Spam, traps, and tempo' }, { name: 'Heavy', short: 'HE', tone: 'orange', focus: isPortuguese.value ? 'Sobrevivência e presença' : 'Survival and presence' }, { name: 'Engineer', short: 'EN', tone: 'blue', focus: isPortuguese.value ? 'Posicionamento e suporte' : 'Positioning and support' }, { name: 'Medic', short: 'ME', tone: 'blue', focus: isPortuguese.value ? 'Über, rotas e leitura' : 'Über, routes, and reads' }, { name: 'Sniper', short: 'SN', tone: 'orange', focus: isPortuguese.value ? 'Ângulos e impacto' : 'Angles and impact' }, { name: 'Spy', short: 'SP', tone: 'red', focus: isPortuguese.value ? 'Informação e timing' : 'Information and timing' }
 ])
 
-const resources = [
+  const resources = computed(() => isPortuguese.value ? [
   { name: 'logs.tf', description: 'Estatísticas detalhadas de partidas', url: 'https://logs.tf' },
   { name: 'demos.tf', description: 'Demos e histórico de partidas', url: 'https://demos.tf' },
   { name: 'trends.tf', description: 'Tendências e histórico ampliado', url: 'https://trends.tf' },
-  { name: 'MGE.tf', description: 'Treino de aim e duelo 1v1 na South America', url: 'https://mge.tf/', featured: true }
-]
+  { name: 'MGE.tf', description: 'Treino de mira e duelo 1v1 na América do Sul', url: 'https://mge.tf/', featured: true }
+] : [
+  { name: 'logs.tf', description: 'Detailed match statistics', url: 'https://logs.tf' },
+  { name: 'demos.tf', description: 'Demos and match history', url: 'https://demos.tf' },
+  { name: 'trends.tf', description: 'Extended trends and history', url: 'https://trends.tf' },
+  { name: 'MGE.tf', description: 'Aim practice and 1v1 duels in South America', url: 'https://mge.tf/', featured: true }
+])
 
-const tips = [
+const tips = computed(() => isPortuguese.value ? [
   { title: 'Defina uma métrica', description: 'Escolha dano, DPM, mortes ou cura. Uma métrica clara ajuda a separar progresso de variância.' },
   { title: 'Revise suas mortes', description: 'Anote as duas primeiras decisões que levaram à morte, não apenas o momento final.' },
   { title: 'Treine antes de jogar', description: 'Faça 10 minutos de mira, movimento ou surf antes de entrar em uma partida competitiva.' },
   { title: 'Compare blocos', description: 'Use pelo menos cinco logs para observar uma tendência. Um destaque não é ainda um padrão.' }
-]
+] : [
+  { title: 'Define one metric', description: 'Choose damage, DPM, deaths, or healing. One clear metric helps separate progress from variance.' },
+  { title: 'Review your deaths', description: 'Write down the first two decisions that led to the death, not only the final moment.' },
+  { title: 'Warm up before playing', description: 'Spend 10 minutes on aim, movement, or surf before joining a competitive match.' },
+  { title: 'Compare blocks', description: 'Use at least five logs to spot a trend. One standout game is not yet a pattern.' }
+])
 </script>
 
 <style scoped>
