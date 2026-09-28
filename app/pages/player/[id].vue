@@ -32,7 +32,7 @@
                 <p class="eyebrow">{{ t.player.analysisWindow }}</p>
                 <h2>{{ periodLabel }}</h2>
               </div>
-              <div class="period-selector" role="tablist" aria-label="Período de análise">
+              <div class="period-selector" role="tablist" :aria-label="t.player.analysisPeriod">
                 <button
                   v-for="option in periodOptions"
                   :key="option"
