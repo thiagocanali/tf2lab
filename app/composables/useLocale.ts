@@ -1,4 +1,4 @@
-import { computed, onMounted } from 'vue'
+import { computed } from 'vue'
 
 const translations = {
   en: {
@@ -16,11 +16,27 @@ const translations = {
 } as const
 
 type Locale = 'en' | 'pt'
+
 export function useLocale() {
-  const locale = useState<Locale>('tf2lab-locale', () => 'en')
-  onMounted(() => { locale.value = navigator.language.toLowerCase().startsWith('pt') ? 'pt' : 'en' })
+  const savedLocale = useCookie<Locale | undefined>('tf2lab-locale', {
+    default: () => undefined,
+    sameSite: 'lax',
+    maxAge: 60 * 60 * 24 * 365,
+  })
+  const browserLocale: Locale = import.meta.client && navigator.language.toLowerCase().startsWith('pt') ? 'pt' : 'en'
+  const locale = useState<Locale>('tf2lab-locale-state', () => savedLocale.value ?? browserLocale)
+
+  if (import.meta.client && !savedLocale.value) {
+    savedLocale.value = browserLocale
+  }
+
+  const setLocale = (nextLocale: Locale) => {
+    locale.value = nextLocale
+    savedLocale.value = nextLocale
+  }
+
   const t = computed(() => translations[locale.value])
-  return { locale, t }
+  return { locale, setLocale, t }
 }
 export type Translations = typeof translations.en
 
