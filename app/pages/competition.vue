@@ -76,7 +76,7 @@
       <div>
         <p class="section-kicker">{{ copy.horizon }}</p>
         <h2 id="api-title">{{ copy.context }}</h2>
-        <p>Esta página reúne os pontos de entrada oficiais da comunidade, sem fetch de API. O TF2Lab adiciona contexto e ferramentas sem substituir as plataformas que já sustentam a cena.</p>
+        <p>{{ isPortuguese ? 'Esta página reúne os pontos de entrada oficiais da comunidade, sem buscar dados de API. O TF2Lab adiciona contexto e ferramentas sem substituir as plataformas que já sustentam a cena.' : 'This page brings together the community’s official entry points without fetching API data. TF2Lab adds context and tools without replacing the platforms that already support the scene.' }}</p>
       </div>
     </section>
   </main>
@@ -98,11 +98,15 @@ const internationalScene = [
   { name: 'RGL', mark: 'NA', description: isPortuguese.value ? 'Ligas, mixes e eventos para a cena norte-americana.' : 'Leagues, mixes, and events for the North American scene.', url: 'https://rgl.gg' }
 ]
 
-const roadmap = [
-  { title: 'Times', description: 'Perfis de equipes, lineups e um lugar claro para reunir identidade e histórico.' },
-  { title: 'Matches', description: 'Calendário, resultados, adversários e links úteis para revisar cada confronto.' },
+const roadmap = computed(() => isPortuguese.value ? [
+  { title: 'Times', description: 'Perfis de equipes, escalações e um lugar claro para reunir identidade e histórico.' },
+  { title: 'Partidas', description: 'Calendário, resultados, adversários e links úteis para revisar cada confronto.' },
   { title: 'Integração com logs', description: 'Conecte o contexto competitivo às estatísticas da partida e à evolução dos jogadores.' }
-]
+] : [
+  { title: 'Teams', description: 'Team profiles, lineups, and a clear place to bring identity and history together.' },
+  { title: 'Matches', description: 'Schedules, results, opponents, and useful links to review every matchup.' },
+  { title: 'Log integration', description: 'Connect competitive context to match statistics and player progression.' }
+])
 </script>
 
 <style scoped>
