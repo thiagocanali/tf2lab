@@ -294,16 +294,16 @@ export default defineEventHandler(async (event) => {
 
       if (recentLogs.length < safeLimit) {
         const teams = log.teams ?? {}
-        const opponent = player.team === 'Red' ? 'Blue' : 'Red'
+        const opponent = player.team === 'Red' ? 'Blue' : player.team === 'Blue' ? 'Red' : undefined
         const ownScore = Number(teams[player.team]?.score)
-        const opponentScore = Number(teams[opponent]?.score)
-        const hasScores = teams[player.team]?.score != null && teams[opponent]?.score != null && Number.isFinite(ownScore) && Number.isFinite(opponentScore)
+        const opponentScore = Number(opponent ? teams[opponent]?.score : NaN)
+        const hasScores = teams[player.team]?.score != null && opponent !== undefined && teams[opponent]?.score != null && Number.isFinite(ownScore) && Number.isFinite(opponentScore)
         const result = !hasScores ? 'Result unavailable' : ownScore > opponentScore ? 'Victory' : ownScore < opponentScore ? 'Defeat' : 'Draw'
         const kills = player.kills ?? 0
         const deaths = player.deaths ?? 0
         const damage = player.dmg ?? 0
         const heals = player.heals ?? 0
-        const kd = deaths ? kills / deaths : kills
+        const kd = deaths ? kills / deaths : kills > 0 ? undefined : 0
 
         const summary = summaries.find((entry: any) => String(entry.id) === String(log.id))
         recentLogs.push({
@@ -324,7 +324,6 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    const analyzedMatches = analyzedPlayerLogs
     const classStats = Array.from(classMap.entries())
       .map(([className, stats]) => {
         const safeHeals = stats.heals ?? 0
@@ -334,14 +333,14 @@ export default defineEventHandler(async (event) => {
         return {
           className,
           ...stats,
-          kd: stats.deaths ? stats.kills / stats.deaths : stats.kills,
+          kd: stats.deaths ? stats.kills / stats.deaths : stats.kills > 0 ? undefined : 0,
           heals: safeHeals,
           healsPerMatch: matchCount ? safeHeals / matchCount : safeHeals,
           avgKills: matchCount ? (stats.kills ?? 0) / matchCount : 0,
           avgDeaths: matchCount ? (stats.deaths ?? 0) / matchCount : 0,
           avgDamage: matchCount ? (safeDamage || 0) / matchCount : 0,
           avgHeals: matchCount ? (safeHeals || 0) / matchCount : 0,
-          avgKd: stats.deaths ? (stats.kills ?? 0) / stats.deaths : stats.kills,
+          avgKd: stats.deaths ? (stats.kills ?? 0) / stats.deaths : stats.kills > 0 ? undefined : 0,
           matches: matchCount,
           // Class breakdowns and historical trends are omitted until observed
           // per-class/per-match source data can support them accurately.
@@ -359,7 +358,7 @@ export default defineEventHandler(async (event) => {
           timePlayed: classStats[0].timePlayed,
           timePercentage: timePlayed > 0
             ? (classStats[0].timePlayed / timePlayed) * 100
-            : (classStats[0].matches / Math.max(1, analyzedMatches)) * 100,
+            : (classStats[0].matches / Math.max(1, analyzedPlayerLogs)) * 100,
           matches: classStats[0].matches ?? 0
         }
       : undefined
@@ -367,7 +366,7 @@ export default defineEventHandler(async (event) => {
     const avgDeaths = matches ? totalDeaths / matches : 0
     const avgDamage = matches ? totalDamage / matches : 0
     const avgHeals = matches ? totalHeals / matches : 0
-    const avgKd = totalDeaths ? totalKills / totalDeaths : totalKills
+    const avgKd = totalDeaths ? totalKills / totalDeaths : totalKills > 0 ? undefined : 0
 
     return {
       data: {
