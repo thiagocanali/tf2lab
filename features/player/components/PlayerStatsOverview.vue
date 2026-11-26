@@ -46,9 +46,21 @@ const number = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 })
 const keyMetrics = computed(() => [
   {
     label: 'K/D Médio',
-    value: (props.overview.avgKd ?? props.overview.kdRatio ?? 0).toFixed(2),
+    value: (props.overview.avgKd ?? props.overview.kdRatio)?.toFixed(2) ?? '—',
     icon: '⚔️',
     subtext: `${(props.overview.avgKills ?? 0).toFixed(1)} K / ${(props.overview.avgDeaths ?? 0).toFixed(1)} D`
+  },
+  {
+    label: 'DPM',
+    value: props.overview.damagePerMinute?.toFixed(1) ?? '—',
+    icon: '💥',
+    subtext: 'Damage / min'
+  },
+  {
+    label: 'HPM',
+    value: props.overview.healingPerMinute?.toFixed(1) ?? '—',
+    icon: '🏥',
+    subtext: 'Healing / min'
   },
   {
     label: 'Damage/Partida',
