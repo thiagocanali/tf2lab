@@ -3,7 +3,10 @@ import { getRouterParam } from 'h3'
 
 const STEAM64_BASE = '76561197960265728'
 const ANALYZED_LOG_LIMIT = 10
-const MAX_PLAYER_LOG_LIMIT = 10000
+const MAX_PLAYER_LOG_LIMIT = 100
+const DETAIL_CACHE_TTL_MS = 5 * 60 * 1000
+const DETAIL_CACHE_MAX = 128
+const TRENDS_CACHE_MAX = 128
 const LOGS_TF_MAX_PAGE_SIZE = 10000
 const LOG_DETAIL_CONCURRENCY = 10
 const LOG_DETAIL_ATTEMPTS = 3
@@ -13,7 +16,7 @@ const LOG_DETAIL_BUDGET_MS = 20000
 const TRENDS_TF_TIMEOUT_MS = 3000
 const TRENDS_TF_CACHE_TTL_MS = 60 * 1000
 
-const logDetailCache = new Map<string, Promise<any | null>>()
+const logDetailCache = new Map<string, { expiresAt: number; value: Promise<any | null> }>()
 const trendsCache = new Map<string, { expiresAt: number; value: Promise<any> }>()
 
 async function fetchPlayerLogSummaries(logsTfUrl: string, playerId: string, requestedLimit: number) {
@@ -24,7 +27,8 @@ async function fetchPlayerLogSummaries(logsTfUrl: string, playerId: string, requ
   let offset = 0
 
   while (results.length < targetLimit) {
-    const response = await $fetch(`${logsTfUrl}?player=${encodeURIComponent(playerId)}&limit=${pageSize}&offset=${offset}`, { method: 'GET' })
+    const response = await $fetch(`${logsTfUrl}?player=${encodeURIComponent(playerId)}&limit=${pageSize}&offset=${offset}`, { method: 'GET', timeout: 4000, retry: 0 })
+    if (response?.success === false || !Array.isArray(response?.logs ?? response?.results)) throw new Error('Invalid logs.tf response')
     const pageLogs = response?.logs ?? response?.results ?? []
     if (!pageLogs.length) break
 
@@ -56,6 +60,7 @@ async function fetchTrendsLogSummaries(trendsTfUrl: string, playerId: string, re
       },
       timeout: TRENDS_TF_TIMEOUT_MS
     })
+    if (response?.success === false || !Array.isArray(response?.logs ?? response?.results)) throw new Error('Invalid trends.tf response')
     const logs = response?.logs ?? response?.results ?? []
     const total = Number(response?.total)
 
@@ -73,6 +78,11 @@ async function fetchTrendsLogSummaries(trendsTfUrl: string, playerId: string, re
     }
   })()
 
+  while (trendsCache.size >= TRENDS_CACHE_MAX) {
+    const oldest = trendsCache.keys().next().value
+    if (oldest === undefined) break
+    trendsCache.delete(oldest)
+  }
   trendsCache.set(cacheKey, { expiresAt: Date.now() + TRENDS_TF_CACHE_TTL_MS, value: request })
   request.catch(() => {
     if (trendsCache.get(cacheKey)?.value === request) trendsCache.delete(cacheKey)
@@ -85,6 +95,8 @@ async function fetchSteamAvatar(steamId: string, apiKey: string | undefined): Pr
   try {
     const response = await $fetch('https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/', {
       method: 'GET',
+      timeout: 3000,
+      retry: 0,
       query: {
         key: apiKey,
         steamids: steamId
@@ -125,7 +137,8 @@ function fetchLogDetail(logsTfUrl: string, summary: any): Promise<any | null> {
   const logId = String(summary.id)
   const cacheKey = `${logsTfUrl}/${logId}`
   const cached = logDetailCache.get(cacheKey)
-  if (cached) return cached
+  if (cached && cached.expiresAt > Date.now()) return cached.value
+  logDetailCache.delete(cacheKey)
 
   let request: Promise<any | null>
   request = (async () => {
@@ -133,9 +146,10 @@ function fetchLogDetail(logsTfUrl: string, summary: any): Promise<any | null> {
       try {
         const response = await $fetch(`${logsTfUrl}/${encodeURIComponent(logId)}`, {
           method: 'GET',
-          timeout: LOG_DETAIL_TIMEOUT_MS
+          timeout: LOG_DETAIL_TIMEOUT_MS,
+          retry: 0
         })
-        return response?.success === false ? null : { ...response, id: logId }
+        return response?.success === false || !response?.players || typeof response.players !== 'object' ? null : { ...response, id: logId }
       } catch {
         if (attempt < LOG_DETAIL_ATTEMPTS - 1) {
           const delay = Math.min(1000, LOG_DETAIL_RETRY_DELAY_MS * (2 ** attempt))
@@ -146,11 +160,16 @@ function fetchLogDetail(logsTfUrl: string, summary: any): Promise<any | null> {
 
     return null
   })().then((detail) => {
-    if (detail === null && logDetailCache.get(cacheKey) === request) logDetailCache.delete(cacheKey)
+    if (detail === null && logDetailCache.get(cacheKey)?.value === request) logDetailCache.delete(cacheKey)
     return detail
   })
 
-  logDetailCache.set(cacheKey, request)
+  while (logDetailCache.size >= DETAIL_CACHE_MAX) {
+    const oldest = logDetailCache.keys().next().value
+    if (oldest === undefined) break
+    logDetailCache.delete(oldest)
+  }
+  logDetailCache.set(cacheKey, { expiresAt: Date.now() + DETAIL_CACHE_TTL_MS, value: request })
   return request
 }
 
@@ -210,7 +229,7 @@ export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const requestedLimit = Number(query.limit ?? ANALYZED_LOG_LIMIT)
   const safeLimit = Number.isFinite(requestedLimit)
-    ? Math.min(Math.max(1, requestedLimit), MAX_PLAYER_LOG_LIMIT)
+    ? Math.min(Math.max(1, Math.floor(requestedLimit)), MAX_PLAYER_LOG_LIMIT)
     : ANALYZED_LOG_LIMIT
 
   const config = useRuntimeConfig()
@@ -234,7 +253,7 @@ export default defineEventHandler(async (event) => {
     const trendsOnlySummaries = trendsTfSummaries
       .filter((log: any) => !logsById.has(String(log.id)))
       .map((log: any) => ({ ...log, source: 'trends.tf' }))
-    const summaries = [...logsTfSummaries.map((log: any) => ({ ...log, source: 'logs.tf' })), ...trendsOnlySummaries]
+    const summaries = Array.from(new Map<string, any>([...logsTfSummaries.map((log: any) => ({ ...log, source: 'logs.tf' })), ...trendsOnlySummaries].filter((log: any) => /^\d+$/.test(String(log.id))).map((log: any) => [String(log.id), log])).values())
       .sort((left: any, right: any) => summaryTimestamp(right) - summaryTimestamp(left))
       .slice(0, safeLimit)
     const totalLogs = logsTfResultTotal(logsTfData.total, trendsTfData.total, logsTfSummaries.length, trendsTfSummaries.length)
@@ -377,6 +396,8 @@ export default defineEventHandler(async (event) => {
         steamPlaytime,
         totalLogs: totalLogs,
         requestedLimit: safeLimit,
+        sourceStatus: { logsTf: logsResult.status === 'fulfilled' ? 'available' : 'unavailable', trendsTf: trendsResult.status === 'fulfilled' ? 'available' : 'unavailable' },
+        partial: logsResult.status === 'rejected' || trendsResult.status === 'rejected' || analyzedPlayerLogs < summaries.length || requestedLimit > safeLimit,
         logsReturned: summaries.length,
         logsAnalyzed: analyzedPlayerLogs,
         logsDetailsReturned: details.filter(Boolean).length,
