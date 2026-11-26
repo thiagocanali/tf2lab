@@ -1,3 +1,4 @@
+import { observedKd, observedMatchResult } from '../../utils/player-analytics'
 import { getRouterParam } from 'h3'
 
 const STEAM64_BASE = '76561197960265728'
@@ -297,17 +298,12 @@ export default defineEventHandler(async (event) => {
       }
 
       if (recentLogs.length < safeLimit) {
-        const teams = log.teams ?? {}
-        const opponent = player.team === 'Red' ? 'Blue' : player.team === 'Blue' ? 'Red' : undefined
-        const ownScore = Number(teams[player.team]?.score)
-        const opponentScore = Number(opponent ? teams[opponent]?.score : NaN)
-        const hasScores = teams[player.team]?.score != null && opponent !== undefined && teams[opponent]?.score != null && Number.isFinite(ownScore) && Number.isFinite(opponentScore)
-        const result = !hasScores ? 'Result unavailable' : ownScore > opponentScore ? 'Victory' : ownScore < opponentScore ? 'Defeat' : 'Draw'
+        const result = observedMatchResult(log.teams ?? {}, player.team)
         const kills = player.kills ?? 0
         const deaths = player.deaths ?? 0
         const damage = player.dmg ?? 0
         const heals = player.heals ?? 0
-        const kd = deaths ? kills / deaths : kills > 0 ? undefined : 0
+        const kd = observedKd(kills, deaths)
 
         const summary = summaries.find((entry: any) => String(entry.id) === String(log.id))
         recentLogs.push({
@@ -337,14 +333,14 @@ export default defineEventHandler(async (event) => {
         return {
           className,
           ...stats,
-          kd: stats.deaths ? stats.kills / stats.deaths : stats.kills > 0 ? undefined : 0,
+          kd: observedKd(stats.kills, stats.deaths),
           heals: safeHeals,
           healsPerMatch: matchCount ? safeHeals / matchCount : safeHeals,
           avgKills: matchCount ? (stats.kills ?? 0) / matchCount : 0,
           avgDeaths: matchCount ? (stats.deaths ?? 0) / matchCount : 0,
           avgDamage: matchCount ? (safeDamage || 0) / matchCount : 0,
           avgHeals: matchCount ? (safeHeals || 0) / matchCount : 0,
-          avgKd: stats.deaths ? (stats.kills ?? 0) / stats.deaths : stats.kills > 0 ? undefined : 0,
+          avgKd: observedKd(stats.kills ?? 0, stats.deaths),
           matches: matchCount,
           // Class breakdowns and historical trends are omitted until observed
           // per-class/per-match source data can support them accurately.
@@ -370,7 +366,7 @@ export default defineEventHandler(async (event) => {
     const avgDeaths = matches ? totalDeaths / matches : 0
     const avgDamage = matches ? totalDamage / matches : 0
     const avgHeals = matches ? totalHeals / matches : 0
-    const avgKd = totalDeaths ? totalKills / totalDeaths : totalKills > 0 ? undefined : 0
+    const avgKd = observedKd(totalKills, totalDeaths)
 
     return {
       data: {
