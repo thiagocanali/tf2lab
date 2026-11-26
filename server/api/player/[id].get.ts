@@ -360,6 +360,8 @@ export default defineEventHandler(async (event) => {
           avgDamage: matchCount ? (safeDamage || 0) / matchCount : 0,
           avgHeals: matchCount ? (safeHeals || 0) / matchCount : 0,
           avgKd: observedKd(stats.kills ?? 0, stats.deaths),
+          damagePerMinute: stats.timePlayed > 0 ? safeDamage * 60 / stats.timePlayed : undefined,
+          healingPerMinute: stats.timePlayed > 0 ? safeHeals * 60 / stats.timePlayed : undefined,
           matches: matchCount,
           // Class breakdowns and historical trends are omitted until observed
           // per-class/per-match source data can support them accurately.
@@ -418,7 +420,9 @@ export default defineEventHandler(async (event) => {
           avgDeaths,
           avgDamage,
           avgHeals,
-          avgKd
+          avgKd,
+          damagePerMinute: timePlayed > 0 && details.filter(Boolean).every(log => !log.players?.[steam3Id] || (log.players[steam3Id].class_stats ?? []).some((stat: any) => Number(stat.total_time) > 0)) ? totalDamage * 60 / timePlayed : undefined,
+          healingPerMinute: timePlayed > 0 && details.filter(Boolean).every(log => !log.players?.[steam3Id] || (log.players[steam3Id].class_stats ?? []).some((stat: any) => Number(stat.total_time) > 0)) ? totalHeals * 60 / timePlayed : undefined
         },
         classStats,
         recentLogs
