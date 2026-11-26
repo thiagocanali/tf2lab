@@ -211,79 +211,24 @@ const visibleLogs = computed(() => {
 })
 
 const selectedScale = computed(() => {
-  const total = totalRecentLogs.value || 1
-  return Math.min(1, (visibleLogs.value.length || 1) / total)
+  const total = totalRecentLogs.value
+  return total > 0 ? visibleLogs.value.length / total : 0
 })
 
-const filteredOverview = computed(() => {
-  const base = player.value?.overview ?? {
-    totalKills: 0,
-    totalDeaths: 0,
-    kdRatio: 0,
-    totalDamage: 0,
-    totalHeals: 0,
-    healsPerMatch: 0,
-    matches: 0,
-    timePlayed: 0,
-    avgKills: 0,
-    avgDeaths: 0,
-    avgDamage: 0,
-    avgHeals: 0,
-    avgKd: 0
-  }
-
-  const matches = Math.max(1, visibleLogs.value.length || base.matches || 1)
-  const totalKills = Math.round(base.totalKills ?? 0)
-  const totalDeaths = Math.round(base.totalDeaths ?? 0)
-  const totalDamage = Math.round(base.totalDamage ?? 0)
-  const totalHeals = Math.round(base.totalHeals ?? 0)
-
-  return {
-    ...base,
-    totalKills,
-    totalDeaths,
-    kdRatio: totalDeaths > 0 ? totalKills / totalDeaths : totalKills,
-    totalDamage,
-    totalHeals,
-    healsPerMatch: matches ? totalHeals / matches : 0,
-    matches,
-    avgKills: base.avgKills ?? (matches ? totalKills / matches : 0),
-    avgDeaths: base.avgDeaths ?? (matches ? totalDeaths / matches : 0),
-    avgDamage: base.avgDamage ?? (matches ? totalDamage / matches : 0),
-    avgHeals: base.avgHeals ?? (matches ? totalHeals / matches : 0),
-    avgKd: base.avgKd ?? (totalDeaths > 0 ? totalKills / totalDeaths : totalKills),
-    timePlayed: base.timePlayed ?? 0
-  }
+// The API is queried again when the selected window changes. Do not scale or
+// relabel totals for a smaller selection: those would not be observed metrics.
+const filteredOverview = computed(() => player.value?.overview ?? {
+  totalKills: 0,
+  totalDeaths: 0,
+  kdRatio: 0,
+  totalDamage: 0,
+  totalHeals: 0,
+  healsPerMatch: 0,
+  matches: 0,
+  timePlayed: 0
 })
 
-const filteredClassStats = computed(() =>
-  (player.value?.classStats ?? []).map((stat) => {
-    const matchCount = Math.max(1, visibleLogs.value.length || 1)
-    const kills = stat.kills ?? 0
-    const deaths = stat.deaths ?? 0
-    const damage = stat.damage ?? 0
-    const heals = stat.heals ?? 0
-
-    return {
-      ...stat,
-      kills,
-      deaths,
-      damage,
-      heals,
-      kd: deaths > 0 ? kills / deaths : kills,
-      avgKills: stat.avgKills ?? (matchCount ? kills / matchCount : 0),
-      avgDeaths: stat.avgDeaths ?? (matchCount ? deaths / matchCount : 0),
-      avgDamage: stat.avgDamage ?? (matchCount ? damage / matchCount : 0),
-      avgHeals: stat.avgHeals ?? (matchCount ? heals / matchCount : 0),
-      avgKd: stat.avgKd ?? (deaths > 0 ? kills / deaths : kills),
-      healsPerMatch: stat.healsPerMatch ?? (matchCount ? heals / matchCount : 0),
-      performanceTrend: (stat.performanceTrend ?? []).map((point) => ({
-        ...point,
-        value: point.value
-      }))
-    }
-  })
-)
+const filteredClassStats = computed(() => player.value?.classStats ?? [])
 
 const hasProfileData = computed(() => (player.value?.overview.matches ?? 0) > 0)
 
@@ -299,7 +244,7 @@ const kdSeries = computed(() => {
   if (!logs.length) return undefined
   return logs.map((l, idx) => ({
     date: l.timestamp ?? `#${idx + 1}`,
-    value: l.kd ?? (l.deaths ? (l.kills ?? 0) / l.deaths : (l.kills ?? 0))
+    value: l.kd ?? (l.deaths ? (l.kills ?? 0) / l.deaths : 0)
   }))
 })
 
@@ -343,17 +288,17 @@ const scoreLabel = (log: { score?: number; kills?: number; damage?: number; heal
 const classUsage = computed(() =>
   player.value?.classStats?.map((c) => ({
     name: c.className,
-    value: Math.max(1, Math.round(((c.timePlayed ?? 0) / Math.max(1, player.value?.overview.timePlayed ?? 1)) * 100))
+    value: player.value?.overview.timePlayed ? Math.round(((c.timePlayed ?? 0) / player.value.overview.timePlayed) * 100) : 0
   })) ?? undefined
 )
 
 // Real damage breakdown
 const damageBreakdown = computed(() => {
   const dmg = filteredOverview.value.totalDamage ?? 0
-  const matches = filteredOverview.value.matches ?? 1
+  const matches = filteredOverview.value.matches ?? 0
   return [
     { name: 'Damage', value: dmg },
-    { name: 'Avg/Match', value: Math.round(dmg / matches) },
+    { name: 'Avg/Match', value: matches ? Math.round(dmg / matches) : 0 },
     { name: 'Logs', value: matches }
   ]
 })
