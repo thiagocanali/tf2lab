@@ -11,6 +11,9 @@
 
     <div v-else-if="hasProfileData" class="profile-content">
       <PlayerHeader :player="player" />
+      <p v-if="player?.partial" class="analysis-warning" role="status">
+        {{ locale === 'pt' ? 'Análise parcial: algumas fontes ou partidas não puderam ser consultadas. Limite de 100 logs por consulta.' : 'Partial analysis: some sources or matches could not be retrieved. Maximum 100 logs per request.' }}
+      </p>
 
       <section class="profile-section profile-section--main-class">
         <MainClassPanel :main-class="player?.mainClass" :class-stat="mainClassStat" :analyzed-logs="player?.logsAnalyzed ?? totalRecentLogs" />
