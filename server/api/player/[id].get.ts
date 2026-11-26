@@ -200,41 +200,6 @@ function toSteam3Id(steamId: string): string {
   return `[U:1:${digits.join('').replace(/^0+/, '') || '0'}]`
 }
 
-function emptyProfile(id: string) {
-  return {
-    id,
-    name: `Player ${id.slice(-5)}`,
-    steamId: id,
-    avatarUrl: '',
-    overview: {
-      totalKills: 0,
-      totalDeaths: 0,
-      kdRatio: 0,
-      totalDamage: 0,
-      totalHeals: 0,
-      healsPerMatch: 0,
-      matches: 0,
-      timePlayed: 0
-    },
-    logsTfReturned: 0,
-    trendsTfReturned: 0,
-    trendsTfAvailable: false,
-    classStats: [],
-    recentLogs: []
-  }
-}
-
-function buildPerformanceTrend(base: number, labelPrefix = 'M') {
-  const normalized = Math.max(1, Math.round(base))
-  return [
-    { label: `${labelPrefix}1`, value: Math.round(normalized * 0.68) },
-    { label: `${labelPrefix}2`, value: Math.round(normalized * 0.82) },
-    { label: `${labelPrefix}3`, value: Math.round(normalized * 1) },
-    { label: `${labelPrefix}4`, value: Math.round(normalized * 1.14) },
-    { label: `${labelPrefix}5`, value: Math.round(normalized * 1.08) }
-  ]
-}
-
 export default defineEventHandler(async (event) => {
   const id = String(getRouterParam(event, 'id') ?? '')
   if (!/^7656119\d{10}$/.test(id)) {
@@ -257,6 +222,9 @@ export default defineEventHandler(async (event) => {
       fetchPlayerLogSummaries(logsTfUrl, id, safeLimit),
       fetchTrendsLogSummaries(trendsTfUrl, id, safeLimit)
     ])
+    if (logsResult.status === 'rejected' && trendsResult.status === 'rejected') {
+      throw createError({ statusCode: 502, statusMessage: 'Player statistics sources unavailable' })
+    }
     const logsTfData = logsResult.status === 'fulfilled' ? logsResult.value : { logs: [], total: 0 }
     const trendsTfData = trendsResult.status === 'fulfilled' ? trendsResult.value : { logs: [], total: 0, available: false }
     const logsTfSummaries = logsTfData.logs
@@ -271,6 +239,9 @@ export default defineEventHandler(async (event) => {
     const totalLogs = logsTfResultTotal(logsTfData.total, trendsTfData.total, logsTfSummaries.length, trendsTfSummaries.length)
     
     const details = await fetchLogDetails(logsTfUrl, summaries, LOG_DETAIL_BUDGET_MS)
+    if (summaries.length > 0 && details.every((detail) => !detail)) {
+      throw createError({ statusCode: 502, statusMessage: 'Match details unavailable' })
+    }
 
     const [avatarUrl, steamPlaytime] = await Promise.all([
       fetchSteamAvatar(id, steamApiKey),
@@ -286,10 +257,12 @@ export default defineEventHandler(async (event) => {
     let totalDamage = 0
     let totalHeals = 0
     let timePlayed = 0
+    let analyzedPlayerLogs = 0
 
     for (const log of details.filter(Boolean)) {
       const player = log.players?.[steam3Id]
       if (!player) continue
+      analyzedPlayerLogs += 1
 
       name = log.names?.[steam3Id] ?? name
       totalKills += player.kills ?? 0
@@ -322,7 +295,10 @@ export default defineEventHandler(async (event) => {
       if (recentLogs.length < safeLimit) {
         const teams = log.teams ?? {}
         const opponent = player.team === 'Red' ? 'Blue' : 'Red'
-        const result = teams[player.team]?.score === undefined ? 'Recorded match' : teams[player.team].score > (teams[opponent]?.score ?? 0) ? 'Victory' : 'Defeat'
+        const ownScore = Number(teams[player.team]?.score)
+        const opponentScore = Number(teams[opponent]?.score)
+        const hasScores = teams[player.team]?.score != null && teams[opponent]?.score != null && Number.isFinite(ownScore) && Number.isFinite(opponentScore)
+        const result = !hasScores ? 'Result unavailable' : ownScore > opponentScore ? 'Victory' : ownScore < opponentScore ? 'Defeat' : 'Draw'
         const kills = player.kills ?? 0
         const deaths = player.deaths ?? 0
         const damage = player.dmg ?? 0
@@ -348,13 +324,12 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    const analyzedMatches = Math.max(1, details.filter(Boolean).length)
+    const analyzedMatches = analyzedPlayerLogs
     const classStats = Array.from(classMap.entries())
       .map(([className, stats]) => {
         const safeHeals = stats.heals ?? 0
         const safeDamage = stats.damage ?? 0
-        const basePerformance = className === 'Medic' ? safeHeals : safeDamage
-        const matchCount = Math.max(1, stats.matches ?? analyzedMatches)
+        const matchCount = stats.matches ?? 0
 
         return {
           className,
@@ -368,26 +343,16 @@ export default defineEventHandler(async (event) => {
           avgHeals: matchCount ? (safeHeals || 0) / matchCount : 0,
           avgKd: stats.deaths ? (stats.kills ?? 0) / stats.deaths : stats.kills,
           matches: matchCount,
-          mostHealedClasses: className === 'Medic'
-            ? [
-                { name: 'Soldier', value: Math.max(1200, Math.round(safeHeals * 0.42)) },
-                { name: 'Demoman', value: Math.max(900, Math.round(safeHeals * 0.27)) },
-                { name: 'Scout', value: Math.max(700, Math.round(safeHeals * 0.18)) }
-              ]
-            : undefined,
-          deathsByClass: className === 'Medic'
-            ? [
-                { name: 'Scout', value: Math.max(60, Math.round((stats.deaths || 0) * 0.38)) },
-                { name: 'Soldier', value: Math.max(50, Math.round((stats.deaths || 0) * 0.31)) },
-                { name: 'Demo', value: Math.max(45, Math.round((stats.deaths || 0) * 0.21)) }
-              ]
-            : undefined,
-          performanceTrend: buildPerformanceTrend(basePerformance, className === 'Medic' ? 'M' : 'P')
+          // Class breakdowns and historical trends are omitted until observed
+          // per-class/per-match source data can support them accurately.
+          mostHealedClasses: undefined,
+          deathsByClass: undefined,
+          performanceTrend: undefined
         }
       })
       .sort((a, b) => b.timePlayed - a.timePlayed)
 
-    const matches = Math.max(1, recentLogs.length)
+    const matches = analyzedPlayerLogs
     const mainClass = classStats[0]
       ? {
           className: classStats[0].className,
@@ -414,7 +379,8 @@ export default defineEventHandler(async (event) => {
         totalLogs: totalLogs,
         requestedLimit: safeLimit,
         logsReturned: summaries.length,
-        logsAnalyzed: details.filter(Boolean).length,
+        logsAnalyzed: analyzedPlayerLogs,
+        logsDetailsReturned: details.filter(Boolean).length,
         logsTfReturned: logsTfSummaries.length,
         trendsTfReturned: trendsTfSummaries.length,
         trendsTfAvailable: trendsTfData.available,
@@ -438,8 +404,9 @@ export default defineEventHandler(async (event) => {
         recentLogs
       }
     }
-  } catch {
-    return { data: emptyProfile(id) }
+  } catch (error: any) {
+    if (error?.statusCode) throw error
+    throw createError({ statusCode: 502, statusMessage: 'Unable to retrieve player statistics' })
   }
 })
 
