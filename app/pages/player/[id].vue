@@ -44,7 +44,7 @@
                   :class="{ active: selectedPeriod === option }"
                   @click="selectLogLimit(option)"
                 >
-                  {{ option === 'all' ? t.player.all : `${option}` }}
+                  {{ `${option}` }}
                 </button>
               </div>
             </div>
@@ -159,9 +159,9 @@ const route = useRoute()
 const id = String(route.params.id ?? '')
 
 const selectedLogLimit = ref(30)
-const selectedPeriod = ref<number | 'all'>(30)
+const selectedPeriod = ref(30)
 const minimumLogsForAnalysis = 5
-const periodOptions: Array<number | 'all'> = [10, 30, 60, 'all']
+const periodOptions = [10, 30, 60, 100]
 
 const { data: res, pending, error } = await useAsyncData(
   `player-${id}`,
@@ -182,13 +182,13 @@ const { data: brTf2PickupRes, pending: brTf2PickupPending } = useAsyncData(
   }
 )
 
-const selectLogLimit = (option: number | 'all') => {
+const selectLogLimit = (option: number) => {
   selectedPeriod.value = option
-  selectedLogLimit.value = option === 'all' ? 10000 : option
+  selectedLogLimit.value = option
 }
 
 watch(selectedLogLimit, (limit) => {
-  selectedPeriod.value = limit === 10000 ? 'all' : limit
+  selectedPeriod.value = limit
 })
 
 const player = computed<PlayerProfile | undefined>(() => {
@@ -202,21 +202,14 @@ const mainClassStat = computed(() => {
   const mainClassName = player.value?.mainClass?.className
   return player.value?.classStats?.find((stat) => stat.className === mainClassName)
 })
-const periodLabel = computed(() => selectedPeriod.value === 'all' ? t.value.player.all : `${localeLabel(t.value.player.logs, selectedPeriod.value)}`)
+const periodLabel = computed(() => localeLabel(t.value.player.logs, selectedPeriod.value))
 const hasEnoughLogsForAnalysis = computed(() => (player.value?.recentLogs?.length ?? 0) >= minimumLogsForAnalysis)
 
 const visibleLogs = computed(() => {
   const logs = player.value?.recentLogs ?? []
-  const limit = selectedPeriod.value === 'all'
-    ? logs.length
-    : Math.max(1, Math.min(Number(selectedPeriod.value), logs.length || 1))
-  return logs.slice(0, limit)
+  return logs
 })
 
-const selectedScale = computed(() => {
-  const total = totalRecentLogs.value
-  return total > 0 ? visibleLogs.value.length / total : 0
-})
 
 // The API is queried again when the selected window changes. Do not scale or
 // relabel totals for a smaller selection: those would not be observed metrics.
