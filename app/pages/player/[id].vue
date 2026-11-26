@@ -110,7 +110,7 @@
 
     <section v-else class="empty-state" role="alert">
       <p class="empty-state__icon" aria-hidden="true">∅</p>
-      <h2>{{ t.player.notFound }}</h2>
+      <h2>{{ errorMessage ? (locale === 'pt' ? 'Estatísticas temporariamente indisponíveis' : 'Statistics temporarily unavailable') : t.player.notFound }}</h2>
       <p>
         {{ t.player.unavailable }} <code>#{{ id }}</code>.
         {{ errorMessage ? `${t.player.reason} ${errorMessage}` : t.player.checkSteam }}
