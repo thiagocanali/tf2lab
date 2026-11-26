@@ -49,6 +49,8 @@ export interface PlayerClassStat {
   avgDeaths?: number
   avgDamage?: number
   avgHeals?: number
+  damagePerMinute?: number
+  healingPerMinute?: number
   avgKd?: number
   matches?: number
   mostHealedClasses?: ClassMetricBreakdown[]
@@ -66,7 +68,7 @@ export interface PlayerMainClassInsight {
 export interface PlayerOverviewStats {
   totalKills: number
   totalDeaths: number
-  kdRatio: number
+  kdRatio?: number
   totalDamage: number
   totalHeals?: number
   healsPerMatch?: number
@@ -76,6 +78,8 @@ export interface PlayerOverviewStats {
   avgDeaths?: number
   avgDamage?: number
   avgHeals?: number
+  damagePerMinute?: number
+  healingPerMinute?: number
   avgKd?: number
 }
 
@@ -92,6 +96,9 @@ export interface PlayerProfile {
   requestedLimit?: number
   logsReturned?: number
   logsAnalyzed?: number
+  logsDetailsReturned?: number
+  partial?: boolean
+  sourceStatus?: { logsTf: 'available' | 'unavailable'; trendsTf: 'available' | 'unavailable' }
   logsTfReturned?: number
   trendsTfReturned?: number
   trendsTfAvailable?: boolean

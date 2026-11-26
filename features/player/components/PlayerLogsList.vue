@@ -21,10 +21,10 @@
           class="limit-input"
           type="number"
           min="1"
-          max="10000"
+          max="100"
           :value="limit"
           aria-label="Quantidade personalizada de logs"
-          @input="handleCustomLimit(($event.target as HTMLInputElement).value)"
+          @change="handleCustomLimit(($event.target as HTMLInputElement).value)"
         />
       </div>
     </div>
@@ -79,7 +79,7 @@ const trendsTfReturned = computed(() => Math.max(0, Number(props.trendsTfReturne
 const trendsTfAvailable = computed(() => props.trendsTfAvailable === true)
 
 const showApiWarning = computed(() => 
-  returnedLogCount.value !== null && returnedLogCount.value < requestedLimit.value
+  returnedLogCount.value !== null && returnedLogCount.value < Math.min(requestedLimit.value, totalLogs.value)
 )
 const showDetailWarning = computed(() =>
   returnedLogCount.value !== null && analyzedLogCount.value < returnedLogCount.value
@@ -90,7 +90,7 @@ const limitOptions = [10, 30, 60, 100]
 const handleCustomLimit = (value: string) => {
   const parsed = Number(value)
   if (!Number.isFinite(parsed)) return
-  const nextValue = Math.min(Math.max(1, parsed), 10000)
+  const nextValue = Math.min(Math.max(1, Math.floor(parsed)), 100)
   emit('update:limit', nextValue)
 }
 

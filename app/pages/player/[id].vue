@@ -11,6 +11,9 @@
 
     <div v-else-if="hasProfileData" class="profile-content">
       <PlayerHeader :player="player" />
+      <p v-if="player?.partial" class="analysis-warning" role="status">
+        {{ locale === 'pt' ? 'Análise parcial: algumas fontes ou partidas não puderam ser consultadas. Limite de 100 logs por consulta.' : 'Partial analysis: some sources or matches could not be retrieved. Maximum 100 logs per request.' }}
+      </p>
 
       <section class="profile-section profile-section--main-class">
         <MainClassPanel :main-class="player?.mainClass" :class-stat="mainClassStat" :analyzed-logs="player?.logsAnalyzed ?? totalRecentLogs" />
@@ -41,7 +44,7 @@
                   :class="{ active: selectedPeriod === option }"
                   @click="selectLogLimit(option)"
                 >
-                  {{ option === 'all' ? t.player.all : `${option}` }}
+                  {{ `${option}` }}
                 </button>
               </div>
             </div>
@@ -110,7 +113,7 @@
 
     <section v-else class="empty-state" role="alert">
       <p class="empty-state__icon" aria-hidden="true">∅</p>
-      <h2>{{ t.player.notFound }}</h2>
+      <h2>{{ errorMessage ? (locale === 'pt' ? 'Estatísticas temporariamente indisponíveis' : 'Statistics temporarily unavailable') : t.player.notFound }}</h2>
       <p>
         {{ t.player.unavailable }} <code>#{{ id }}</code>.
         {{ errorMessage ? `${t.player.reason} ${errorMessage}` : t.player.checkSteam }}
@@ -156,9 +159,9 @@ const route = useRoute()
 const id = String(route.params.id ?? '')
 
 const selectedLogLimit = ref(30)
-const selectedPeriod = ref<number | 'all'>(30)
+const selectedPeriod = ref(30)
 const minimumLogsForAnalysis = 5
-const periodOptions: Array<number | 'all'> = [10, 30, 60, 'all']
+const periodOptions = [10, 30, 60, 100]
 
 const { data: res, pending, error } = await useAsyncData(
   `player-${id}`,
@@ -179,13 +182,13 @@ const { data: brTf2PickupRes, pending: brTf2PickupPending } = useAsyncData(
   }
 )
 
-const selectLogLimit = (option: number | 'all') => {
+const selectLogLimit = (option: number) => {
   selectedPeriod.value = option
-  selectedLogLimit.value = option === 'all' ? 10000 : option
+  selectedLogLimit.value = option
 }
 
 watch(selectedLogLimit, (limit) => {
-  selectedPeriod.value = limit === 10000 ? 'all' : limit
+  selectedPeriod.value = limit
 })
 
 const player = computed<PlayerProfile | undefined>(() => {
@@ -199,91 +202,29 @@ const mainClassStat = computed(() => {
   const mainClassName = player.value?.mainClass?.className
   return player.value?.classStats?.find((stat) => stat.className === mainClassName)
 })
-const periodLabel = computed(() => selectedPeriod.value === 'all' ? t.value.player.all : `${localeLabel(t.value.player.logs, selectedPeriod.value)}`)
+const periodLabel = computed(() => localeLabel(t.value.player.logs, selectedPeriod.value))
 const hasEnoughLogsForAnalysis = computed(() => (player.value?.recentLogs?.length ?? 0) >= minimumLogsForAnalysis)
 
 const visibleLogs = computed(() => {
   const logs = player.value?.recentLogs ?? []
-  const limit = selectedPeriod.value === 'all'
-    ? logs.length
-    : Math.max(1, Math.min(Number(selectedPeriod.value), logs.length || 1))
-  return logs.slice(0, limit)
+  return logs
 })
 
-const selectedScale = computed(() => {
-  const total = totalRecentLogs.value || 1
-  return Math.min(1, (visibleLogs.value.length || 1) / total)
+
+// The API is queried again when the selected window changes. Do not scale or
+// relabel totals for a smaller selection: those would not be observed metrics.
+const filteredOverview = computed(() => player.value?.overview ?? {
+  totalKills: 0,
+  totalDeaths: 0,
+  kdRatio: 0,
+  totalDamage: 0,
+  totalHeals: 0,
+  healsPerMatch: 0,
+  matches: 0,
+  timePlayed: 0
 })
 
-const filteredOverview = computed(() => {
-  const base = player.value?.overview ?? {
-    totalKills: 0,
-    totalDeaths: 0,
-    kdRatio: 0,
-    totalDamage: 0,
-    totalHeals: 0,
-    healsPerMatch: 0,
-    matches: 0,
-    timePlayed: 0,
-    avgKills: 0,
-    avgDeaths: 0,
-    avgDamage: 0,
-    avgHeals: 0,
-    avgKd: 0
-  }
-
-  const matches = Math.max(1, visibleLogs.value.length || base.matches || 1)
-  const totalKills = Math.round(base.totalKills ?? 0)
-  const totalDeaths = Math.round(base.totalDeaths ?? 0)
-  const totalDamage = Math.round(base.totalDamage ?? 0)
-  const totalHeals = Math.round(base.totalHeals ?? 0)
-
-  return {
-    ...base,
-    totalKills,
-    totalDeaths,
-    kdRatio: totalDeaths > 0 ? totalKills / totalDeaths : totalKills,
-    totalDamage,
-    totalHeals,
-    healsPerMatch: matches ? totalHeals / matches : 0,
-    matches,
-    avgKills: base.avgKills ?? (matches ? totalKills / matches : 0),
-    avgDeaths: base.avgDeaths ?? (matches ? totalDeaths / matches : 0),
-    avgDamage: base.avgDamage ?? (matches ? totalDamage / matches : 0),
-    avgHeals: base.avgHeals ?? (matches ? totalHeals / matches : 0),
-    avgKd: base.avgKd ?? (totalDeaths > 0 ? totalKills / totalDeaths : totalKills),
-    timePlayed: base.timePlayed ?? 0
-  }
-})
-
-const filteredClassStats = computed(() =>
-  (player.value?.classStats ?? []).map((stat) => {
-    const matchCount = Math.max(1, visibleLogs.value.length || 1)
-    const kills = stat.kills ?? 0
-    const deaths = stat.deaths ?? 0
-    const damage = stat.damage ?? 0
-    const heals = stat.heals ?? 0
-
-    return {
-      ...stat,
-      kills,
-      deaths,
-      damage,
-      heals,
-      kd: deaths > 0 ? kills / deaths : kills,
-      avgKills: stat.avgKills ?? (matchCount ? kills / matchCount : 0),
-      avgDeaths: stat.avgDeaths ?? (matchCount ? deaths / matchCount : 0),
-      avgDamage: stat.avgDamage ?? (matchCount ? damage / matchCount : 0),
-      avgHeals: stat.avgHeals ?? (matchCount ? heals / matchCount : 0),
-      avgKd: stat.avgKd ?? (deaths > 0 ? kills / deaths : kills),
-      healsPerMatch: stat.healsPerMatch ?? (matchCount ? heals / matchCount : 0),
-      performanceTrend: (stat.performanceTrend ?? []).map((point) => ({
-        ...point,
-        value: point.value
-      }))
-    }
-  })
-)
+const filteredClassStats = computed(() => player.value?.classStats ?? [])
 
 const hasProfileData = computed(() => (player.value?.overview.matches ?? 0) > 0)
 
@@ -299,7 +240,7 @@ const kdSeries = computed(() => {
   if (!logs.length) return undefined
   return logs.map((l, idx) => ({
     date: l.timestamp ?? `#${idx + 1}`,
-    value: l.kd ?? (l.deaths ? (l.kills ?? 0) / l.deaths : (l.kills ?? 0))
+    value: l.kd ?? (l.deaths ? (l.kills ?? 0) / l.deaths : 0)
   }))
 })
 
@@ -343,17 +284,17 @@ const scoreLabel = (log: { score?: number; kills?: number; damage?: number; heal
 const classUsage = computed(() =>
   player.value?.classStats?.map((c) => ({
     name: c.className,
-    value: Math.max(1, Math.round(((c.timePlayed ?? 0) / Math.max(1, player.value?.overview.timePlayed ?? 1)) * 100))
+    value: player.value?.overview.timePlayed ? Math.round(((c.timePlayed ?? 0) / player.value.overview.timePlayed) * 100) : 0
   })) ?? undefined
 )
 
 // Real damage breakdown
 const damageBreakdown = computed(() => {
   const dmg = filteredOverview.value.totalDamage ?? 0
-  const matches = filteredOverview.value.matches ?? 1
+  const matches = filteredOverview.value.matches ?? 0
   return [
     { name: 'Damage', value: dmg },
-    { name: 'Avg/Match', value: Math.round(dmg / matches) },
+    { name: 'Avg/Match', value: matches ? Math.round(dmg / matches) : 0 },
     { name: 'Logs', value: matches }
   ]
 })
