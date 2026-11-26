@@ -269,8 +269,9 @@ export default defineEventHandler(async (event) => {
       totalDeaths += player.deaths ?? 0
       totalDamage += player.dmg ?? 0
       totalHeals += player.heals ?? 0
-      timePlayed += log.length ?? log.info?.total_length ?? 0
+      timePlayed += (player.class_stats ?? []).reduce((seconds: number, stat: any) => seconds + (Number(stat.total_time) || 0), 0)
 
+      const classesSeenInLog = new Set<string>()
       for (const stat of player.class_stats ?? []) {
         const current = classMap.get(stat.type) ?? {
           timePlayed: 0,
@@ -288,7 +289,10 @@ export default defineEventHandler(async (event) => {
         current.assists += stat.assists ?? 0
         current.damage += stat.dmg ?? 0
         current.heals += stat.heals ?? 0
-        current.matches += 1
+        if (!classesSeenInLog.has(stat.type)) {
+          current.matches += 1
+          classesSeenInLog.add(stat.type)
+        }
         classMap.set(stat.type, current)
       }
 
@@ -357,8 +361,8 @@ export default defineEventHandler(async (event) => {
           className: classStats[0].className,
           timePlayed: classStats[0].timePlayed,
           timePercentage: timePlayed > 0
-            ? (classStats[0].timePlayed / timePlayed) * 100
-            : (classStats[0].matches / Math.max(1, analyzedPlayerLogs)) * 100,
+            ? Math.min(100, (classStats[0].timePlayed / timePlayed) * 100)
+            : 0,
           matches: classStats[0].matches ?? 0
         }
       : undefined
