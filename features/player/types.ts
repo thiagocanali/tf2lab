@@ -92,6 +92,7 @@ export interface PlayerProfile {
   requestedLimit?: number
   logsReturned?: number
   logsAnalyzed?: number
+  logsDetailsReturned?: number
   logsTfReturned?: number
   trendsTfReturned?: number
   trendsTfAvailable?: boolean
